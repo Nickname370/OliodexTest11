@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oliotappelu</title>
+    <style>
+        /* Retro Game Boy -henkinen tyylittely */
+        body {
+            background-color: #333;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #111;
+            user-select: none;
+        }
+
+        #game-container {
+            width: 400px;
+            height: 380px;
+            background-color: #c4cfa1;
+            border: 10px solid #555;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #battle-screen {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+            position: relative;
+        }
+
+        .status-box {
+            background: rgba(255,255,255,0.3);
+            border: 2px solid #111;
+            padding: 5px 10px;
+            width: 160px;
+            font-size: 14px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        .hp-bar-container {
+            width: 100%;
+            background: #777;
+            height: 8px;
+            border: 1px solid #111;
+            margin-top: 4px;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background: #111;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .vihu-status {
+            align-self: flex-start;
+            margin-left: 10px;
+        }
+
+        .pelaaja-status {
+            align-self: flex-end;
+            margin-right: 10px;
+        }
+
+        #sprites-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .sprite-wrapper {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #vihu-wrapper {
+            top: 55px;
+            right: 40px;
+            animation: bounceVihu 2.5s infinite alternate ease-in-out;
+        }
+
+        #pelaaja-wrapper {
+            bottom: 50px;
+            left: 30px;
+            animation: bouncePelaaja 2s infinite alternate ease-in-out;
+        }
+
+        .pixel-sprite {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        @keyframes bouncePelaaja {
+            from {
+                transform: translateY(0) scaleY(1);
+            }
+            to {
+                transform: translateY(-3px) scaleY(0.98);
+            }
+        }
+
+        @keyframes bounceVihu {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(-4px);
+            }
+        }
+
+        #ui-box {
+            height: 110px;
+            background-color: #c4cfa1;
+            border-top: 4px double #111;
+            display: flex;
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        #text-box {
+            flex: 1;
+            font-size: 15px;
+            line-height: 1.4;
+            padding-right: 10px;
+            word-wrap: break-word;
+        }
+
+        .menu-box {
+            width: 130px;
+            border-left: 2px solid #111;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+            padding-left: 8px;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid #111;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: left;
+            padding: 4px 6px;
+        }
+
+        .btn:hover {
+            background: #111;
+            color: #c4cfa1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="game-container">
+
+    <!-- Taisteluruutu -->
+    <div id="battle-screen">
+
+        <!-- Vihollisen status -->
+        <div class="status-box vihu-status">
+            <div>VUORIJYRÄ</div>
+            <div>Lv 50 · ROCK & GROUND</div>
+
+            <div class="hp-bar-container">
+                <div id="vihu-hp" class="hp-bar"></div>
+            </div>
+        </div>
+
+        <!-- Oliokuvat -->
+        <div id="sprites-container">
+
+            <!-- Pelaajan Havukka -->
+            <div id="pelaaja-wrapper" class="sprite-wrapper">
+                <img
+                    class="pixel-sprite"
+                    src="Megatorkkuli.png"
+                    alt="Mega-Torkkuli"
+                >
+            </div>
+
+            <!-- Vihollisen Roihu -->
+            <div id="vihu-wrapper" class="sprite-wrapper">
+                <img
+                    class="pixel-sprite"
+                    src="Vuorijyra.png"
+                    alt="Vuorijyrä"
+                >
+            </div>
+
+        </div>
+
+        <!-- Takaisin-nappi -->
+        <a href="oliodextappelu1.html">
+            <button
+                style="
+                    position:absolute;
+                    top:0px;
+                    right:0px;
+                    padding:10px 14px;
+                    font-size:16px;
+                    cursor:pointer;
+                "
+            >
+                Takaisin
+            </button>
+        </a>
+
+        <!-- Pelaajan status -->
+        <div class="status-box pelaaja-status">
+            <div>MEGA-TORKKULI</div>
+            <div>Lv 40 · GRASS & FAIRY</div>
+
+            <div class="hp-bar-container">
+                <div id="pelaaja-hp" class="hp-bar"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Alavalikko -->
+    <div id="ui-box">
+
+        <div id="text-box">
+            Villi VUORIJYRÄ hyökkää! Mitä MEGA-TORKKULI tekee?
+        </div>
+
+        <!-- Päävalikko -->
+        <div id="menu-box" class="menu-box">
+
+            <button class="btn" onclick="naytaHyokkaykset()">
+                TAISTELE
+            </button>
+
+            <button class="btn" onclick="pakene()">
+                PAKENE
+            </button>
+
+        </div>
+
+        <!-- Hyökkäysvalikko -->
+        <div id="moves-box" class="menu-box hidden">
+		
+			<button
+                class="btn"
+                onclick="hyokkaa('Säihkesidos', 35)"
+            >
+                SÄIHKESIDOS
+            </button>
+
+            <button
+                class="btn"
+                onclick="hyokkaa('Kuiskaava Kaste', 15)"
+            >
+                KUISKAAVA KASTE
+            </button>
+
+            <button
+                class="btn"
+                onclick="palaaValikkoon()"
+            >
+                TAKASIN
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+
+    // =========================
+    // ELÄMÄPISTEET (Legendaarinen vaikeustaso)
+    // =========================
+
+    let pelaajaMaxHp = 100;
+    let pelaajaHp = 100;
+
+    // Vuorijyrän HP (Legendaarinen boss-vastus!)
+    let vihuMaxHp = 450;
+    let vihuHp = 450;
+
+    let taisteluKaynnissa = true;
+
+
+    // =========================
+    // HTML-ELEMENTIT
+    // =========================
+
+    const textBox = document.getElementById('text-box');
+    const menuBox = document.getElementById('menu-box');
+    const movesBox = document.getElementById('moves-box');
+
+
+    // =========================
+    // HP-PALKKIEN PÄIVITYS
+    // =========================
+
+    function paivitaHpPalkit() {
+
+        const pelaajaProsentti =
+            Math.max(0, (pelaajaHp / pelaajaMaxHp) * 100);
+
+        const vihuProsentti =
+            Math.max(0, (vihuHp / vihuMaxHp) * 100);
+
+        document.getElementById('pelaaja-hp').style.width =
+            pelaajaProsentti + '%';
+
+        document.getElementById('vihu-hp').style.width =
+            vihuProsentti + '%';
+    }
+
+
+    // =========================
+    // HYÖKKÄYSVALIKKO
+    // =========================
+
+    function naytaHyokkaykset() {
+
+        if (!taisteluKaynnissa) return;
+
+        menuBox.classList.add('hidden');
+        movesBox.classList.remove('hidden');
+    }
+
+
+    // =========================
+    // TAKAISIN
+    // =========================
+
+    function palaaValikkoon() {
+
+        movesBox.classList.add('hidden');
+        menuBox.classList.remove('hidden');
+    }
+
+
+    // =========================
+    // PELAAJAN HYÖKKÄYS
+    // =========================
+
+    function hyokkaa(liikeNimi, vahinko) {
+
+        if (!taisteluKaynnissa) return;
+
+        movesBox.classList.add('hidden');
+
+        textBox.innerHTML =
+            `MEGA-TORKKULI käytti<br>${liikeNimi.toUpperCase()}!`;
+
+        setTimeout(() => {
+
+            // Väläytetään Vuorijyrää
+            const vihuWrapper =
+                document.getElementById('vihu-wrapper');
+
+            if (vihuWrapper) {
+
+                vihuWrapper.style.opacity = '0.1';
+
+                setTimeout(() => {
+                    vihuWrapper.style.opacity = '1';
+                }, 150);
+            }
+
+
+            // Grass tekee edelleen 4x vahinkoa, mutta bossilla on paljon HP:ta!
+            let lopullinenVahinko = Math.floor(vahinko * 4.0);
+
+            vihuHp -= lopullinenVahinko;
+
+            if (vihuHp < 0) {
+                vihuHp = 0;
+            }
+
+            // =========================
+            // UUSI PARANNUSMEKANIIKKA
+            // =========================
+            let parannusViesti = "";
+            
+            // Tarkistetaan onko kyseessä parantava liike (esim. Kuiskaava Kaste)
+            if (liikeNimi.toLowerCase() === "kuiskaava kaste" || liikeNimi.toLowerCase() === "parannus") {
+                let parannusMaara = 15; // Palauttaa 15 HP:ta
+                pelaajaHp += parannusMaara;
+                
+                if (pelaajaHp > pelaajaMaxHp) {
+                    pelaajaHp = pelaajaMaxHp;
+                }
+                parannusViesti = `<br><span style="font-size:12px; color: #ff69b4; font-weight: bold;">Mega-Torkkuli paransi ${parannusMaara} HP!</span>`;
+            }
+
+            paivitaHpPalkit();
+
+
+            textBox.innerHTML =
+                `MEGA-TORKKULI käytti<br>
+                ${liikeNimi.toUpperCase()}!<br>
+                <span style="font-size:12px; color: #4caf50; font-weight: bold;">
+                Se on ERITTÄIN tehokas! (4x vahinko)
+                </span>${parannusViesti}`;
+
+
+            setTimeout(() => {
+
+                if (vihuHp <= 0) {
+
+                    if (vihuWrapper) {
+                        vihuWrapper.style.display = 'none';
+                    }
+
+                    lopetaPeli(
+                        "Legendaarinen VUORIJYRÄ pakeni!<br>MEGA-TORKKULI voitti taistelun!"
+                    );
+
+                } else {
+
+                    vihollisenVuoro();
+                }
+
+            }, 2000); // Pidunnettiin hieman aikaa, jotta ehtii lukea parannustekstin
+
+        }, 1000);
+    }
+
+
+    // =========================
+    // LEGENDAARISEN VUORIJYRÄN VUORO
+    // =========================
+
+    function vihollisenVuoro() {
+
+        if (!taisteluKaynnissa) return;
+
+        textBox.innerHTML =
+            "Legendaarinen VUORIJYRÄ<br>käytti MAANJÄRISTYSTÄ!";
+
+
+        setTimeout(() => {
+
+            // Väläytetään Mega-Torkkulia
+            const pelaajaWrapper =
+                document.getElementById('pelaaja-wrapper');
+
+            if (pelaajaWrapper) {
+
+                pelaajaWrapper.style.opacity = '0.1';
+
+                setTimeout(() => {
+                    pelaajaWrapper.style.opacity = '1';
+                }, 150);
+            }
+
+
+            // Maanjäristys tekee kovaa tuhoa bossilta
+            let vihuVahinko = 35;
+
+            pelaajaHp -= vihuVahinko;
+
+            if (pelaajaHp < 0) {
+                pelaajaHp = 0;
+            }
+
+            paivitaHpPalkit();
+
+
+            textBox.innerHTML =
+                `Legendaarinen VUORIJYRÄ<br>
+                käytti MAANJÄRISTYSTÄ!<br>
+                <span style="font-size:12px; color: #f44336; font-weight: bold;">
+                Maa tärisee! Valtava vahinko!
+                </span>`;
+
+
+            setTimeout(() => {
+
+                if (pelaajaHp <= 0) {
+
+                    if (pelaajaWrapper) {
+                        pelaajaWrapper.style.display = 'none';
+                    }
+
+                    lopetaPeli(
+                        "MEGA-TORKKULI pyörtyi...<br>Legendaarinen vastus oli liian vahva!"
+                    );
+
+                } else {
+
+                    textBox.innerHTML =
+                        "Mitä MEGA-TORKKULI tekee?";
+
+                    menuBox.classList.remove('hidden');
+                }
+
+            }, 1500);
+
+        }, 1000);
+    }
+
+
+    // =========================
+    // PAKENE
+    // =========================
+
+    function pakene() {
+
+        textBox.innerHTML =
+            "Pakenit legendaarisen vastustajan luota!";
+
+        taisteluKaynnissa = false;
+
+        menuBox.classList.add('hidden');
+        movesBox.classList.add('hidden');
+
+        setTimeout(() => {
+
+            window.location.href = 'oliodextappelu1.html';
+
+        }, 1200);
+    }
+
+
+    // =========================
+    // PELIN LOPETUS
+    // =========================
+
+    function lopetaPeli(viesti) {
+
+        taisteluKaynnissa = false;
+
+        textBox.innerHTML = viesti;
+
+        menuBox.classList.add('hidden');
+        movesBox.classList.add('hidden');
+    }
+
+
+    // =========================
+    // ALOITUS
+    // =========================
+
+    paivitaHpPalkit();
+
+</script>
+
+
+
+</body>
+</html>

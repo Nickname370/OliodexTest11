@@ -1,0 +1,4573 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oliodex</title>
+
+<style>
+/* UUSI YLÄPALKKI: Pitää elementit yhdessä ylhäällä rullatessa */
+.ylapalkki {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+	background: #457b9d;
+    backdrop-filter: blur(5px);    /* Hämärtää taustaa tyylikkäästi */
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+    z-index: 1100;
+    gap: 15px;                      /* Jättää automaattisesti väliä elementtien väliin */
+}
+
+/* Runko tarvitsee nyt paddingia ylhääle, jotta yläpalkki ei peitä sisältöä */
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    padding-top: 90px; /* Nostettu 70px -> 90px */
+    margin: 0;
+    background: #0fd429;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url("Tausta1.png");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+/* Uusittu nappi yläpalkin sisälle */
+.valikko-nappi {
+    font-size: 24px;
+    background: #457b9d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: 0.2s;
+    flex-shrink: 0; /* Estää nappia puristumasta kasaan */
+    z-index: 5600;  /* UUSI: Nostaa napin sivupalkin (1200) yläpuolelle */
+}
+
+/* Tyyli napille, kun valikko on auki */
+.valikko-nappi.nappi-auki {
+    background: #d62828;
+}
+
+.valikko-nappi:hover {
+    transform: scale(1.1);
+    background: #d62828;
+}
+
+/* Otsikko yläpalkissa */
+h1 {
+    color: #ffffff; 
+    background: #457b9d;
+    border-radius: 10px;    
+    padding: 8px 15px;     
+    margin: 0;             /* Poistetaan oletusmarginaalit */
+    font-size: 30px;       /* Pienennetty hieman, jotta mahtuu yläpalkkiin */
+    white-space: nowrap;   /* Estää tekstin rivittymisen */
+}
+h1 a {
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+h1 a:hover {
+    text-decoration: none;
+}
+
+.haku-ryhma {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 405px;
+}
+
+#haku { 
+    flex: 1; 
+    width: auto; 
+    max-width: none;
+    height: 45px;
+    padding: 0 18px;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 15px;
+    font-size: 16px;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.random-nappi {
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0.2;
+    border: none;
+    border-radius: 8px;
+    background: #457b9d;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: 0.2s;
+}
+
+.random-nappi:hover {
+    transform: scale(1.1) rotate(15deg);
+    background: #d62828;
+}
+
+.random-nappi:active {
+    transform: scale(0.95) rotate(30deg);
+}
+
+/* Varmistetaan että sivupalkki aukeaa yläpalkin alta oikein */
+.sivupalkki {
+    position: fixed;
+    top: 0;
+    left: -260px; 
+    width: 250px;
+    height: 100%;
+    background: white;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+    z-index: 1000;   
+    transition: left 0.3s ease;
+    padding: 20px;
+    box-sizing: border-box;
+    padding-top: 90px;     /* Lisätty tilaa yläreunaan */
+}
+
+
+.sivupalkki.auki {
+    left: 0; /* Liukuu näkyviin */
+}
+
+.sivupalkki h3 {
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 2px solid #f4f4f9;
+    padding-bottom: 5px;
+}
+
+.sivupalkki ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sivupalkki li {
+    padding: 12px;
+    margin-bottom: 5px;
+    background: #457b9d;
+	color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.sivupalkki li:hover {
+    transform: scale(1.05);
+    background: #d62828;
+    color: white;
+}
+
+/* Alueen otsikko gridissä (vie koko rivin) */
+.alue-otsikko {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background: #457b9d;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 27px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.kortti {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.kortti:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+.kortti img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    justify-content: center; /* Pitää sisällön vaakasuunnassa keskellä */
+    align-items: flex-end;    /* Siirtää sisällön pystysuunnassa alareunaan */
+    padding-bottom: 40px;    /* Jättää pienen raon modalin ja näytön alareunan väliin */
+    z-index: 9000;
+}
+
+.modal-sisalto {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+    position: relative;
+    animation: nouseAlhaalta 0.3s ease; /* Vaihdettu uusi animaatio */
+}
+
+@keyframes nouseAlhaalta {
+    from {
+        transform: translateY(100px); /* Alkaa 100 pikseliä alempaa */
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);     /* Pysähtyy omalle paikalleen */
+        opacity: 1;
+    }
+}
+
+
+.modal img {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+}
+
+.sulje {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 50px;
+    cursor: pointer;
+}
+
+.pokedex {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+@media (max-width: 1000px) {
+    .pokedex {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .pokedex {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kehitys {
+    display: inline-block;
+    margin: 5px;
+    padding: 8px 12px;
+    background: #e63946;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.kehitys:hover {
+    transform: scale(1.08);
+}
+
+.esikehitys {
+    display: inline-block;
+    margin: 5px;
+    padding: 8px 12px;
+    background: #457b9d;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.esikehitys:hover {
+    transform: scale(1.08);
+}
+
+.harvinaisuus {
+    display: inline-block;
+    margin: 10px 0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(45deg, blue, orange);
+}
+.virhe-keskitys {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Varmistaa, että laatikko ei jää muiden elementtien alle */
+    background-color: rgba(0, 0, 0, 0.3); /* Tummentaa muun näytön, jotta laatikko erottuu */
+}
+
+.virhe-laatikko {
+    color: white;
+    background-color: #457b9d !important; /* !important varmistaa, ettei mikään muu tyyli ylikirjoita tätä */
+    border: 2px solid #457b9d;
+    padding: 20px 40px;
+    border-radius: 15px;
+    font-size: 100px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+html {
+    zoom: 67%;
+}
+
+.play-btn { 
+position:absolute; 
+top:7.5px; 
+right:15px; 
+padding:10px 14px; 
+font-size:26px; 
+cursor:pointer; 
+border-radius: 15px;
+}
+
+.play-btn:hover {
+    transform: scale(1.03);
+	transition: all 0.3s ease;
+}
+
+</style>
+</head>
+<body>
+
+<!-- UUSI YLÄPALKKI -->
+<div class="ylapalkki">
+    <button class="valikko-nappi" onclick="toggleSivupalkki(event)">☰</button>
+    <h1><a href="oliodex.html">Oliodex</a></h1>
+    <div class="haku-ryhma">
+    <input type="text" id="haku" placeholder="Hae nimellä tai numerolla (esim. #004)...">
+    <button class="random-nappi" onclick="arvoRandomPokemon()" title="Arvo satunnainen Olio">🎲</button>
+	  <a href="oliodexpelit.html">
+    <button class="play-btn">Pelaa</button>
+  </a>
+</div>
+</div>
+
+<!-- Sivupalkki -->
+<div class="sivupalkki" id="sivupalkki">
+    <h3>Alueet</h3>
+    <ul id="alueLista"></ul>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-sisalto">
+        <span class="sulje" onclick="suljeModal()">&times;</span>
+
+        <img id="modalKuva" src="" alt="">
+        <h2 id="modalNimi"></h2>
+
+        <p><strong>Numero:</strong> <span id="modalNumero"></span></p>
+        <p><strong>Tyyppi:</strong> <span id="modalTyyppi"></span></p>
+        <p><strong>Tieteellinen nimi:</strong> <span id="modalTieteellinen"></span></p>
+		<p><strong>Tietoa:</strong></p>
+<p id="modalTieto"></p>
+
+<p id="modalHarvinaisuus"></p>
+        
+        <p><strong>Esikehitys:</strong></p>
+        <div id="modalEsikehitys"></div>
+
+        <p><strong>Kehitysmuoto:</strong></p>
+        <div id="modalKehitykset"></div>
+    </div>
+</div>
+
+
+<div class="pokedex" id="pokedex"></div>
+<script>
+const pokemonit = [
+{
+    nimi: "Sipuliini",
+    numero: "#001",
+    tyyppi: "Grass",
+    tieteellinenNimi: "Allium parvum",
+    tieto: "Sipuliini elää kosteilla niityillä. Se tuoksuu voimakkaasti sipulilta, mikä karkottaa useimmat saalistajat.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Kyynelsipuli"],
+    kuva: "Sipuliini.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kyynelsipuli",
+    numero: "#002",
+    tyyppi: "Grass",
+    tieteellinenNimi: "Allium lacrimans",
+    tieto: "Kyynelsipuli vapauttaa ilmaan kirpeää siitepölyä, joka saa sekä ihmiset että Oliot puhkeamaan kyyneliin.",
+    harvinaisuus: "Harvinainen",
+    kehitysmuodot: ["Sipuliruhtinas"],
+    esikehitys: "Sipuliini",
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Sipuliruhtinas",
+    numero: "#003",
+    tyyppi: "Grass & Poison",
+    tieteellinenNimi: "Allium princeps",
+    tieto: "Sipuliruhtinaan myrkyllinen tuoksupilvi voi lamaannuttaa viholliset hetkessä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Kyynelsipuli",
+    kehitysmuodot: ["Mega-Sipuliruhtinas"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kekruliekki",
+    numero: "#004",
+    tyyppi: "Fire & Ghost",
+    tieteellinenNimi: "Exorcista Igniculus",
+    tieto: "Kekruliekki voi ilmestyä vanhojen nuotiopaikkojen läheisyyteen.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Roviosielu"],
+    kuva: "Kekruliekki.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Roviosielu",
+    numero: "#005",
+    tyyppi: "Fire & Ghost",
+    tieteellinenNimi: "Exorcista Pyromanus",
+    tieto: "Roviosielu vaeltaa öisin metsissä etsien sammuneita tulia sytytettäväksi uudelleen aavemaisilla liekeillään.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Kekruliekki",
+    kehitysmuodot: ["Pyromanaaja"],
+    kuva: "Roviosielu.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Pyromanaaja",
+    numero: "#006",
+    tyyppi: "Fire & Ghost",
+    tieteellinenNimi: "Exorcista Incendiorum",
+    tieto: "Pyromanaajan sanotaan vartioivan muinaisia rovioita.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Roviosielu",
+    kehitysmuodot: ["Mega-Pyromanaaja"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kuplanen",
+    numero: "#007",
+    tyyppi: "Water",
+    tieteellinenNimi: "Bulla aquatica",
+    tieto: "Kuplanen leikkii jokien pinnalla muodostamalla kuplaketjuja. Se säikähtää helposti kovia ääniä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Höyrytasku"],
+    kuva: "Kuplanen.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Höyrytasku",
+    numero: "#008",
+    tyyppi: "Water",
+    tieteellinenNimi: "Carcinus vaporis",
+    tieto: "Höyrytasku pystyy kuumentamaan vettä kehonsa sisällä ja puhaltamaan ulos sakeita höyrypilviä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Kuplanen",
+    kehitysmuodot: ["Geysiirkuningas"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Geysiirkuningas",
+    numero: "#009",
+    tyyppi: "Water & Rock",
+    tieteellinenNimi: "Carcinus geyserus",
+    tieto: "Geysiirkuningas hallitsee kuumia lähteitä ja pystyy synnyttämään valtavia vesipurkauksia maaperän syvyyksistä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Höyrytasku",
+    kehitysmuodot: ["Mega-Geysiirkuningas"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Räkä",
+    numero: "#010",
+    tyyppi: "Normal",
+    tieteellinenNimi: "Mucosa nasalis",
+	tieto:"Pieni, tahmean näköinen otus, joka kulkee aina suu auki.",
+	harvinaisuus:"Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Nuhru"],
+    kuva: "Raka.png",
+	alue: "Viherlaakso"
+},
+{
+    nimi: "Nuhru",
+    numero: "#011",
+    tyyppi: "Normal & Poison",
+    tieteellinenNimi: "Mucosa sordida",
+	tieto:"Sen turkki on aina vähän märkä ja nenä vuotaa jatkuvasti.",
+	harvinaisuus:"Tavallinen",
+    esikehitys: "Räkä",
+    kehitysmuodot: ["Räkäruhtinas"],
+    kuva: "empty.png",
+	alue: "Viherlaakso"
+},
+{
+    nimi: "Räkäruhtinas",
+    numero: "#012",
+    tyyppi: "Poison",
+    tieteellinenNimi: "Mucosa horribilis",
+    tieto: "Räkäruhtinas hallitsee suuria limapesiä. Sen myrkyllinen hengitys saa ilman muuttumaan sakeaksi ja tahmeaksi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Nuhru",
+    kehitysmuodot: ["Mega-Räkäruhtinas"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kökkö",
+    numero: "#013",
+    tyyppi: "Ground",
+    tieteellinenNimi: "Glebula deformis",
+    tieto: "Kökkö on pieni maamainen Olio, joka muotoutuu jatkuvasti uudelleen. Se viihtyy kosteassa mullassa ja piiloutuu mielellään maan alle.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Löllö"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Löllö",
+    numero: "#014",
+    tyyppi: "Ground & Water",
+    tieteellinenNimi: "Glebula mollis",
+    tieto: "Löllö on pehmeä ja muovautuva Olio, joka imee itseensä vettä muuttaen kehonsa löysäksi ja hyytelömäiseksi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Kökkö",
+    kehitysmuodot: ["Mössö"],
+    kuva: "Lollo.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Mössö",
+    numero: "#015",
+    tyyppi: "Ground & Water",
+    tieteellinenNimi: "Glebula liquida",
+    tieto: "Mössö pystyy sulautumaan mutaan ja veteen lähes täydellisesti. Sen valtava pehmeä keho voi imeä itseensä suuren määrän vettä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Löllö",
+    kehitysmuodot: ["Mega-Mössö"],
+    kuva: "Mosso.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Tuhnu",
+    numero: "#016",
+    tyyppi: "Normal",
+    tieteellinenNimi: "Fetor minimus",
+    tieto: "Pieni ja harmiton Olio, joka päästää jatkuvasti pieniä pörähdyksiä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Pörisijä"],
+    kuva: "Tuhnu.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Pörisijä",
+    numero: "#017",
+    tyyppi: "Normal & Poison",
+    tieteellinenNimi: "Fetor sonorus",
+    tieto: "Pörisijä kulkee paikasta toiseen päästellen äänekkäitä ja epäilyttäviä ääniä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Tuhnu",
+    kehitysmuodot: ["Paskartaja"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Paskartaja",
+    numero: "#018",
+    tyyppi: "Poison",
+    tieteellinenNimi: "Fetor devastans",
+    tieto: "Sen ympärille muodostuu jatkuvasti pahanhajuinen pilvi, jota muut Oliot välttelevät.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Pörisijä",
+    kehitysmuodot: [],
+    kuva: "Paskartaja.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Lörppö",
+    numero: "#019",
+    tyyppi: "Water",
+    tieteellinenNimi: "Gelatina fluens",
+    tieto: "Pehmeä ja löysä Olio, joka ei pysy koskaan täysin samassa muodossa.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Löllykkä"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Löllykkä",
+    numero: "#020",
+    tyyppi: "Water",
+    tieteellinenNimi: "Gelatina tremula",
+    tieto: "Löllykkä hyllyy pienimmästäkin liikkeestä ja pystyy litistämään itsensä lähes olemattomaksi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Lörppö",
+    kehitysmuodot: ["Hyllyvä"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Hyllyvä",
+    numero: "#021",
+    tyyppi: "Water & Poison",
+    tieteellinenNimi: "Gelatina horrenda",
+    tieto: "Valtava hyytelömäinen Olio, joka liikkuu hitaasti mutta jättää jälkeensä tahmean myrkkylammikon.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Löllykkä",
+    kehitysmuodot: [],
+    kuva: "Hyllyva.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kähisijä",
+    numero: "#022",
+    tyyppi: "Normal",
+    tieteellinenNimi: "Tussis parvus",
+    tieto: "Pieni Olio, joka kuulostaa siltä kuin sillä olisi jatkuvasti jotain kurkussa.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Yskijä"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Yskijä",
+    numero: "#023",
+    tyyppi: "Normal & Poison",
+    tieteellinenNimi: "Tussis irritans",
+    tieto: "Sen yskä muuttuu kehityksen myötä voimakkaammaksi ja levittää ympärilleen ärsyttävää höyryä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Kähisijä",
+    kehitysmuodot: ["Rykijä"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Rykijä",
+    numero: "#024",
+    tyyppi: "Poison & Fire",
+    tieteellinenNimi: "Tussis explosiva",
+    tieto: "Rykijä pystyy keräämään kurkkuunsa kuumaa kaasua ja laukaisemaan sen ulos valtavana rykäisynä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Yskijä",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Ruttuinen",
+    numero: "#025",
+    tyyppi: "Normal",
+    tieteellinenNimi: "Rugosus minor",
+    tieto: "Pieni ryppyinen Olio, joka näyttää jatkuvasti siltä kuin se olisi juuri herännyt huonosti nukutun yön jälkeen.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Ruttuaja"],
+    kuva: "Ruttuinen.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Ruttuaja",
+    numero: "#026",
+    tyyppi: "Normal & Dark",
+    tieteellinenNimi: "Rugosus deformis",
+    tieto: "Ruttuaja kerää kehoonsa ryppyjä puolustautuakseen. Mitä vihaisempi se on, sitä enemmän sen iho rypistyy.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Ruttuinen",
+    kehitysmuodot: ["Ryppyhirviö"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Ryppyhirviö",
+    numero: "#027",
+    tyyppi: "Dark & Normal",
+    tieteellinenNimi: "Rugosus horribilis",
+    tieto: "Sen iho on niin ryppyinen, ettei kukaan tiedä, missä sen kasvot oikeastaan ovat.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Ruttuaja",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Velli",
+    numero: "#028",
+    tyyppi: "Water",
+    tieteellinenNimi: "Liquida mollis",
+    tieto: "Pieni löysä Olio, jonka ruumis koostuu lähes kokonaan paksusta vellimäisestä nesteestä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Vellimöykky"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Vellimöykky",
+    numero: "#029",
+    tyyppi: "Water & Poison",
+    tieteellinenNimi: "Liquida turbidus",
+    tieto: "Vellimöykky muuttuu kehityksessään paksummaksi ja tahmeammaksi. Sen sisällä liikkuu jatkuvasti epämääräisiä möykkyjä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Velli",
+    kehitysmuodot: ["Vellipeto"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Vellipeto",
+    numero: "#030",
+    tyyppi: "Water & Poison",
+    tieteellinenNimi: "Liquida ferox",
+    tieto: "Vellipeto pystyy nielemään vastustajansa kokonaan ja sulattamaan tämän hitaasti vellimäisessä ruumiissaan.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Vellimöykky",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Torkkuli",
+    numero: "#031",
+    tyyppi: "Normal",
+    tieteellinenNimi: "Dormitus maximus",
+    tieto: "Torkkuli viettää suurimman osan elämästään nukkuen. Sen kerrotaan joskus tukkivan kokonaisia metsäpolkuja päiväunillaan.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Mega-Torkkuli"],
+    kuva: "Torkkuli.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Inisijä",
+    numero: "#032",
+    tyyppi: "Ghost",
+    tieteellinenNimi: "Lamentor parvus",
+    tieto: "Inisijä ei koskaan vaikene. Sen hiljainen ininä kuuluu jopa paksujen seinien läpi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Valittaja"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Valittaja",
+    numero: "#033",
+    tyyppi: "Ghost & Normal",
+    tieteellinenNimi: "Lamentor querulus",
+    tieto: "Valittaja löytää aina jotain valitettavaa. Sen ympärillä olevat Oliot tulevat helposti surullisiksi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Inisijä",
+    kehitysmuodot: ["Parkuja"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Parkuja",
+    numero: "#034",
+    tyyppi: "Ghost & Dark",
+    tieteellinenNimi: "Lamentor desperatus",
+    tieto: "Parkujan ulvonta on niin surullinen, että jopa rohkeimmat Oliot pakenevat sen kuullessaan.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Valittaja",
+    kehitysmuodot: [],
+    kuva: "Parkuja.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kuolaaja",
+    numero: "#035",
+    tyyppi: "Poison",
+    tieteellinenNimi: "Salivans minor",
+    tieto: "Kuolaaja erittää jatkuvasti paksua kuolaa, joka alkaa kirvellä osuessaan ihoon.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Kuolajätti"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kuolajätti",
+    numero: "#036",
+    tyyppi: "Poison & Water",
+    tieteellinenNimi: "Salivans abundans",
+    tieto: "Sen kuola valuu niin runsaana, että se pystyy muodostamaan ympärilleen pieniä myrkyllisiä lammikoita.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Kuolaaja",
+    kehitysmuodot: ["Kuolahirviö"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kuolahirviö",
+    numero: "#037",
+    tyyppi: "Poison & Dark",
+    tieteellinenNimi: "Salivans horridus",
+    tieto: "Kuolahirviön leuoista valuva myrkky on niin voimakasta, että se syövyttää kiveä muutamassa minuutissa.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Kuolajätti",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Mörisijä",
+    numero: "#038",
+    tyyppi: "Dark",
+    tieteellinenNimi: "Murmur parvus",
+    tieto: "Mörisijä on hiljainen ja ärtyisä Olio, joka päästää matalaa ääntä aina kun joku tulee liian lähelle.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Ärisijä"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Ärisijä",
+    numero: "#039",
+    tyyppi: "Dark & Fighting",
+    tieteellinenNimi: "Murmur ferox",
+    tieto: "Ärisijä on huomattavasti aggressiivisempi kuin edeltäjänsä. Sen ärinä saa pienemmät Oliot piiloutumaan.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Mörisijä",
+    kehitysmuodot: ["Murinahirviö"],
+    kuva: "Arisija.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Murinahirviö",
+    numero: "#040",
+    tyyppi: "Dark & Fighting",
+    tieteellinenNimi: "Murmur gigantus",
+    tieto: "Valtava Murinahirviö käyttää matalaa murinaansa aseena. Sen ääni voi saada maan tärisemään ja vastustajan lamaantumaan pelosta.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Ärisijä",
+    kehitysmuodot: [],
+    kuva: "Murinahirvio.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Tärisijä",
+    numero: "#041",
+    tyyppi: "Electric",
+    tieteellinenNimi: "Tremulus minor",
+    tieto: "Tärisijä vapisee jatkuvasti ja kerää kehoonsa staattista sähköä. Sen koskettaminen saa turkin nousemaan pystyyn.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Tutisija"],
+    kuva: "Tarisija.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Tutisija",
+    numero: "#042",
+    tyyppi: "Electric & Fighting",
+    tieteellinenNimi: "Tremulus ferox",
+    tieto: "Tutisija muuttuu taistelussa yhä voimakkaammin täriseväksi. Sen liikkeet synnyttävät voimakkaita sähköpurkauksia.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Tärisijä",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Röhkijä",
+    numero: "#043",
+    tyyppi: "Normal",
+    tieteellinenNimi: "Grunnitus parvus",
+    tieto: "Röhkijä on pullea pieni Olio, joka kommunikoi muiden kanssa matalilla röhkäisyillä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Röhkötys"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Röhkötys",
+    numero: "#044",
+    tyyppi: "Normal & Ground",
+    tieteellinenNimi: "Grunnitus magnus",
+    tieto: "Röhkötyksen ääni on niin voimakas, että se saa maan värisemään. Se puolustaa reviiriään röhkimällä tunkeilijat tiehensä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Röhkijä",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Kivenkäpy",
+    numero: "#045",
+    tyyppi: "Rock",
+    tieteellinenNimi: "Coniferus lapidis",
+    tieto: "Kivenkäpy näyttää tavalliselta kävyltä, mutta sen kuori on kovempaa kuin graniitti. Se kierii alas mäkiä paetakseen vaaroja.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Rautio"],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Rautio",
+    numero: "#046",
+    tyyppi: "Steel",
+    tieteellinenNimi: "Ferrum rigidus",
+    tieto: "Rautio on pieni metallinen Olio, jonka keho koostuu luonnostaan syntyneestä raudasta. Se kerää magneettisia kiviä ympärilleen suojaksi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Kivenkäpy",
+    kehitysmuodot: [],
+    kuva: "Rautio.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Huurre",
+    numero: "#047",
+    tyyppi: "Ice",
+    tieteellinenNimi: "Gelidus nivis",
+    tieto: "Huurre syntyy kylmimpien talvien aikana. Sen ruumis on lähes kokonaan kirkasta jäätä, joka ei koskaan sula edes kesällä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Möhkäle",
+    numero: "#048",
+    tyyppi: "Rock & Dragon",
+    tieteellinenNimi: "Dracolithus colossus",
+    tieto: "Möhkäle on ikivanha legendaarinen Olio, jonka kivinen ruumis on kasvanut vuosituhansien aikana valtavaksi. Sen sanotaan nukkuvan syvällä vuorten sisällä.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: "",
+    kehitysmuodot: [],
+    kuva: "Mohkale.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Tölkkis",
+    numero: "#049",
+    tyyppi: "Steel & Dragon",
+    tieteellinenNimi: "Ferridraco imperator",
+    tieto: "Tölkkis on metallisuomuinen lohikäärme, joka pystyy sulattamaan ympärillään olevan metallin ja käyttämään sitä panssarinsa vahvistamiseen.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: "",
+    kehitysmuodot: [],
+    kuva: "Tolkkis.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Aavistus",
+    numero: "#050",
+    tyyppi: "Psychic",
+    tieteellinenNimi: "Praesens mentis",
+    tieto: "Aavistus on legendaarinen Olio, jonka kerrotaan näkevän tulevaisuuteen. Se ilmestyy vain ihmisille, joiden mieli on täysin hiljainen.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "Aavistus.png",
+    alue: "Viherlaakso"
+},
+{
+    nimi: "Havu",
+    numero: "#051",
+    tyyppi: "Grass",
+    tieteellinenNimi: "Pinusculus parvus",
+    tieto: "Havu on pieni Olio, jonka selässä kasvaa pehmeitä havuja. Se piiloutuu helposti kuusenoksien sekaan.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Havukka"],
+    kuva: "Havu.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Havukka",
+    numero: "#052",
+    tyyppi: "Grass",
+    tieteellinenNimi: "Pinusculus silvaticus",
+    tieto: "Havukan selkään on kasvanut kokonainen pieni havupensas. Se pystyy ampumaan teräviä neulasia vihollisia kohti.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Havu",
+    kehitysmuodot: ["Havuhirvi"],
+    kuva: "Havukka.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Havuhirvi",
+    numero: "#053",
+    tyyppi: "Grass & Ground",
+    tieteellinenNimi: "Pinusculus giganteus",
+    tieto: "Havuhirvi on Kuusivaaran metsien vartija. Sen sarvet muistuttavat valtavia kuusenoksia ja sen askelista kasvaa uusia kasveja.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Havukka",
+    kehitysmuodot: ["Mega-Havuhirvi"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kipinä",
+    numero: "#054",
+    tyyppi: "Fire",
+    tieteellinenNimi: "Ignisculus parvus",
+    tieto: "Kipinä on pieni energinen Olio, jonka hännän päässä palaa jatkuvasti pieni liekki.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Roihu"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Roihu",
+    numero: "#055",
+    tyyppi: "Fire",
+    tieteellinenNimi: "Ignisculus ardens",
+    tieto: "Roihun selässä ja päästä kasvaa liekkejä, jotka voimistuvat sen suuttuessa. Se viihtyy erityisesti lämpimillä kallioilla.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Kipinä",
+    kehitysmuodot: ["Rojuhirvi"],
+    kuva: "Roihu.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Rojuhirvi",
+    numero: "#056",
+    tyyppi: "Fire & Rock",
+    tieteellinenNimi: "Ignisculus titanus",
+    tieto: "Rojuhirvi on valtava tulinen Olio, jonka kivinen iho hehkuu punaisena. Sen karjaisu voi aiheuttaa pieniä maanjäristyksiä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Roihu",
+    kehitysmuodot: ["Mega-Rojuhirvi"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Liru",
+    numero: "#057",
+    tyyppi: "Water",
+    tieteellinenNimi: "Aquatilis minimus",
+    tieto: "Liru on pieni vesieliö, joka viihtyy Kuusivaaran puroissa. Se osaa piiloutua veden alle lähes täysin.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Lirskis"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Lirskis",
+    numero: "#058",
+    tyyppi: "Water",
+    tieteellinenNimi: "Aquatilis fluvius",
+    tieto: "Lirskis liikkuu vedessä uskomattoman nopeasti ja pystyy ampumaan suustaan voimakkaita vesisuihkuja.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Liru",
+    kehitysmuodot: ["Lirskijä"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Lirskijä",
+    numero: "#059",
+    tyyppi: "Water & Ice",
+    tieteellinenNimi: "Aquatilis glacialis",
+    tieto: "Lirskijä on Kuusivaaran järvien vartija. Sen keho on osittain jäätynyt, ja se pystyy jäädyttämään veden hetkessä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Lirskis",
+    kehitysmuodot: ["Mega-Lirskijä"],
+    kuva: "Lirskija.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Käpynen",
+    numero: "#060",
+    tyyppi: "Grass",
+    tieteellinenNimi: "Conifera minimus",
+    tieto: "Käpynen on pieni ja utelias Olio, joka kantaa selässään yhtä suurta käpyä. Se kerää käpyjä pesänsä ympärille.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Käpyläinen"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Käpyläinen",
+    numero: "#061",
+    tyyppi: "Grass & Bug",
+    tieteellinenNimi: "Conifera larvatus",
+    tieto: "Käpyläinen piiloutuu havupuiden oksille ja käyttää käpyään suojakilpenä. Sen neulasmaiset karvat terävöityvät sen kasvaessa.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Käpynen",
+    kehitysmuodot: ["Käpymestari"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Käpymestari",
+    numero: "#062",
+    tyyppi: "Grass & Rock",
+    tieteellinenNimi: "Conifera dominus",
+    tieto: "Käpymestari hallitsee Kuusivaaran vanhoja metsiä. Sen valtava käpy on niin kova, että se kestää jopa kivivyöryn.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Käpyläinen",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kalliosusi",
+    numero: "#063",
+    tyyppi: "Rock & Dark",
+    tieteellinenNimi: "Lupus saxorum",
+    tieto: "Kalliosusi vartioi Kuusivaaran vuoristopolkuja. Sen kivinen turkki sulautuu täydellisesti kallioseinämien joukkoon.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "Kalliosusi.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Pikkulohi",
+    numero: "#064",
+    tyyppi: "Dragon & Water",
+    tieteellinenNimi: "Draconisculus amicus",
+    tieto: "Pikkulohi on pieni ja hyväntahtoinen lohikäärme, joka yrittää aina auttaa muita Oliota. Se ei vielä osaa lentää kunnolla.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Merikäärme"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Merikäärme",
+    numero: "#065",
+    tyyppi: "Dragon",
+    tieteellinenNimi: "Draconisculus alatus",
+    tieto: "Merikäärme on kasvanut huomattavasti suuremmaksi ja oppinut lentämään. Se viettää päivänsä korkeiden vuorten yllä harjoitellen syöksyhyökkäyksiä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Pikkulohi",
+    kehitysmuodot: ["Lohikäärmeruhtinas"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Lohikäärmeruhtinas",
+    numero: "#066",
+    tyyppi: "Dragon & Flying",
+    tieteellinenNimi: "Draconisculus titanus",
+    tieto: "Lohikäärmeruhtinas on valtava mutta lempeä lohikäärme. Se suojelee Kuusivaaran pieniä Olioita lumimyrskyiltä ja pystyy lentämään pilvien yläpuolella.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Merikäärme",
+    kehitysmuodot: ["Mega-Lohikäärmeruhtinas"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kuusiseiska",
+    numero: "#067",
+    tyyppi: "Grass & Ice",
+    tieteellinenNimi: "picea septem",
+    tieto: "Kuusiseiska on pieni Olio, joka näyttää kuusipuulta ja huutaa numeroita 6-7.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Jääkipinä",
+    numero: "#068",
+    tyyppi: "Ice & Electric",
+    tieteellinenNimi: "Cryoelectra parva",
+    tieto: "Jääkipinä syntyy silloin, kun salama osuu paksuun lumihankeen. Sen kehossa säihkyy pieni sinertävä sähkökipinä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Jääsalama"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Jääsalama",
+    numero: "#069",
+    tyyppi: "Ice & Electric",
+    tieteellinenNimi: "Cryoelectra fulgur",
+    tieto: "Jääsalama pystyy lataamaan koko kehonsa sähköllä ja vapauttamaan sen yhtenä voimakkaana salamana. Sen ympärillä leijuu jatkuvasti pakkashuurretta.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Jääkipinä",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Revontulikoi",
+    numero: "#070",
+    tyyppi: "Bug & Fairy",
+    tieteellinenNimi: "Auroraptera noctis",
+    tieto: "Revontulikoi lentää vain öisin ja sen siipien kuviot muistuttavat revontulia. Sen uskotaan tuovan onnea sille, joka näkee sen lentävän.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "Revontulikoi.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Murikka",
+    numero: "#071",
+    tyyppi: "Rock",
+    tieteellinenNimi: "Saxumculus minor",
+    tieto: "Murikka on pieni kivinen Olio, joka vierii mielellään alas mäkiä. Se kerää matkoillaan pieniä kiviä selkäänsä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Möykky"],
+    kuva: "Murikka.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Möykky",
+    numero: "#072",
+    tyyppi: "Rock & Steel",
+    tieteellinenNimi: "Saxumculus ferratus",
+    tieto: "Möykyn keho on täynnä metallipitoisia mineraaleja. Se muuttuu sitä kovemmaksi, mitä enemmän se vierii vuoriston läpi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Murikka",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Neulikko",
+    numero: "#073",
+    tyyppi: "Grass",
+    tieteellinenNimi: "Acicula parva",
+    tieto: "Neulikko on pieni havumetsien Olio, jonka turkki muistuttaa pehmeitä kuusen neulasia. Se piiloutuu helposti metsän pohjalle.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Neulaskarhu"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Neulaskarhu",
+    numero: "#074",
+    tyyppi: "Grass & Dark",
+    tieteellinenNimi: "Acicula ursus",
+    tieto: "Neulaskarhu on voimakas metsien asukas. Sen selkää peittävät pitkät neulaset, joita se voi nostaa pystyyn pelotellakseen vihollisia.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Neulikko",
+    kehitysmuodot: ["Neulajätti"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Neulajätti",
+    numero: "#075",
+    tyyppi: "Grass & Ground",
+    tieteellinenNimi: "Acicula gigantus",
+    tieto: "Neulajätti on valtava metsien vartija. Sen jokainen askel saa metsänpohjan tärisemään ja sen selästä irtoavat neulaset voivat kasvaa uusiksi puiksi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Neulaskarhu",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Sumusilmä",
+    numero: "#076",
+    tyyppi: "Ice & Psychic",
+    tieteellinenNimi: "Nebuloculus arcticus",
+    tieto: "Sumusilmä ilmestyy korkeille vuorille paksun sumun keskelle. Sen suuri silmä pystyy näkemään asioita jopa lumimyrskyn läpi.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "Sumusilma.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Jääpallero",
+    numero: "#077",
+    tyyppi: "Ice",
+    tieteellinenNimi: "Glacialis globulus",
+    tieto: "Jääpallero vierii lumisilla rinteillä ja kerää itseensä lunta. Mitä pidemmälle se vierii, sitä suuremmaksi se kasvaa.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Lumimöykky"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Lumimöykky",
+    numero: "#078",
+    tyyppi: "Ice & Rock",
+    tieteellinenNimi: "Glacialis saxum",
+    tieto: "Lumimöykky on lähes kokonaan jäätä ja kiveä. Se vierii vuorenrinteitä alas niin kovaa, että sen tielle osuvat kivet murskautuvat.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Jääpallero",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kultahile",
+    numero: "#079",
+    tyyppi: "Ice & Fairy",
+    tieteellinenNimi: "Aureocrystallis parva",
+    tieto: "Kultahile on pieni Olio, jonka kehossa kimaltelee kullanvärisiä jääkiteitä. Se kerää auringonvaloa kiteisiinsä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: null,
+    kehitysmuodot: ["Kultakide"],
+    kuva: "Kultahile.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kultakide",
+    numero: "#080",
+    tyyppi: "Ice & Fairy",
+    tieteellinenNimi: "Aureocrystallis medius",
+    tieto: "Kultakide pystyy keskittämään auringonvaloa jääkiteidensä avulla. Kirkkaalla säällä sen keho loistaa niin voimakkaasti, että sitä on vaikea katsoa suoraan.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Kultahile",
+    kehitysmuodot: ["Kultajää"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kultajää",
+    numero: "#081",
+    tyyppi: "Ice & Psychic",
+    tieteellinenNimi: "Aureocrystallis regalis",
+    tieto: "Kultajää on harvinainen vuoristojen hallitsija. Sen ympärille muodostuvat jääkiteet kelluvat ilmassa ja voivat muodostaa kokonaisia jääseiniä.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Kultakide",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Hankikettu",
+    numero: "#082",
+    tyyppi: "Ice",
+    tieteellinenNimi: "Nivivulpes parva",
+    tieto: "Hankikettu on pieni valkoinen Olio, joka pystyy liikkumaan hangessa jättämättä jälkiä. Se nukkuu usein lumen alla.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Huurrekettu"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Huurrekettu",
+    numero: "#083",
+    tyyppi: "Ice & Dark",
+    tieteellinenNimi: "Nivivulpes gelidus",
+    tieto: "Huurrekettu pystyy katoamaan lumimyrskyn keskelle lähes täydellisesti. Sen hengitys muodostaa ympärilleen kylmää huurretta.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Hankikettu",
+    kehitysmuodot: ["Jäärevontuli"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Jäärevontuli",
+    numero: "#084",
+    tyyppi: "Ice & Fairy",
+    tieteellinenNimi: "Nivivulpes aurora",
+    tieto: "Jäärevontuli on Kuusivaaran lumisten metsien nopea vartija. Sen turkki hohtaa revontulien väreissä ja sen juoksu jättää jälkeensä kimaltelevan jäävanan.",
+    harvinaisuus: "Harvinainen",
+    esikehitys: "Huurrekettu",
+    kehitysmuodot: ["Mega-Jäärevontuli"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Käpytoukka",
+    numero: "#085",
+    tyyppi: "Bug & Grass",
+    tieteellinenNimi: "Conilarva parva",
+    tieto: "Käpytoukka asuu suurten havupuiden kävyissä ja käyttää neulasia ravinnokseen. Se piiloutuu nopeasti vaaran uhatessa.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Käpypistiäinen"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Käpypistiäinen",
+    numero: "#086",
+    tyyppi: "Bug & Grass",
+    tieteellinenNimi: "Conilarva aculeata",
+    tieto: "Käpypistiäisen selkään kasvaa teräviä neulasmaisia piikkejä. Se puolustaa pesäänsä ärhäkästi kaikilta tunkeilijoilta.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Käpytoukka",
+    kehitysmuodot: ["Käpypeto"],
+    kuva: "Kapypistiainen.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Käpypeto",
+    numero: "#087",
+    tyyppi: "Bug & Dark",
+    tieteellinenNimi: "Conilarva ferox",
+    tieto: "Käpypeto on suuri metsien hyönteispetopeto. Sen vahvat leuat pystyvät murskaamaan paksujakin käpyjä hetkessä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Käpypistiäinen",
+    kehitysmuodot: [],
+    kuva: "Kapypeto.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Pakkaspoika",
+    numero: "#088",
+    tyyppi: "Ice",
+    tieteellinenNimi: "Gelidusculus parvus",
+    tieto: "Pakkaspoika on pieni kylmää hohtava Olio. Sen läheisyydessä ilma muuttuu hieman viileämmäksi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kallionuoli",
+    numero: "#089",
+    tyyppi: "Rock",
+    tieteellinenNimi: "Saxosagitta minor",
+    tieto: "Kallionuoli näyttää pieneltä kiviseltä nuolelta ja syöksyy mielellään alas vuorenrinteitä. Se kerää vauhtia pyörimällä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Kalliosyöksy"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kalliosyöksy",
+    numero: "#090",
+    tyyppi: "Rock & Flying",
+    tieteellinenNimi: "Saxosagitta volans",
+    tieto: "Kalliosyöksy pystyy liitämään korkealta vuorenhuipulta toiselle. Sen kivinen keho kestää hurjimmatkin törmäykset.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Kallionuoli",
+    kehitysmuodot: ["Mega-Kalliosyöksy"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Lumipöllö",
+    numero: "#091",
+    tyyppi: "Ice & Flying",
+    tieteellinenNimi: "Nivistrix parva",
+    tieto: "Lumipöllö metsästää hiljaa lumisissa metsissä. Sen valkoiset höyhenet sulautuvat täydellisesti talvimaisemaan.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Huurrepöllö"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Huurrepöllö",
+    numero: "#092",
+    tyyppi: "Ice & Flying",
+    tieteellinenNimi: "Nivistrix gelidus",
+    tieto: "Huurrepöllön siivistä leviää kylmää huurua, joka peittää sen lentäessä kokonaisia puunlatvoja.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Lumipöllö",
+    kehitysmuodot: ["Jääpöllö"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Jääpöllö",
+    numero: "#093",
+    tyyppi: "Ice & Psychic",
+    tieteellinenNimi: "Nivistrix glacialis",
+    tieto: "Jääpöllö näkee jopa paksun lumisateen läpi. Sen katse voi jäädyttää pieniä vesipisaroita suoraan ilmassa.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Huurrepöllö",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kiviporo",
+    numero: "#094",
+    tyyppi: "Rock & Grass",
+    tieteellinenNimi: "Rupicervus parvus",
+    tieto: "Kiviporo laiduntaa vuorten rinteillä kasvavia pieniä kasveja. Sen sarvet ovat kovaa kiveä.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Vuoriporo"],
+    kuva: "Kiviporo.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Vuoriporo",
+    numero: "#095",
+    tyyppi: "Rock & Grass",
+    tieteellinenNimi: "Rupicervus montanus",
+    tieto: "Vuoriporo kiipeää jyrkimmillekin kallioseinämille vaivatta. Sen sarvet kasvavat uusien kivikerrosten peittämiksi joka vuosi.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Kiviporo",
+    kehitysmuodot: ["Kivisarvi"],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kivisarvi",
+    numero: "#096",
+    tyyppi: "Rock & Ground",
+    tieteellinenNimi: "Rupicervus titanus",
+    tieto: "Kivisarvi on Kuusivaaran vuoriston vahva kulkija. Sen valtavat kivisarvet pystyvät murskaamaan paksuja kallioita.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: "Vuoriporo",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Jääkuusi",
+    numero: "#097",
+    tyyppi: "Ice & Grass",
+    tieteellinenNimi: "Cryopinulus arboris",
+    tieto: "Jääkuusi on erikoinen Olio, joka muistuttaa pientä kuusta. Sen oksilla kasvaa jääkiteitä, jotka eivät koskaan sula.",
+    harvinaisuus: "Tavallinen",
+    esikehitys: null,
+    kehitysmuodot: ["Mega-Jääkuusi"],
+    kuva: "Jaakuusi.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Kuurankuningas",
+    numero: "#098",
+    tyyppi: "Ice & Psychic",
+    tieteellinenNimi: "Cryoregulus arcanus",
+    tieto: "Kuurankuningas on Kuusivaaran ikivanha suojelija. Sen kerrotaan nukkuvan korkeimman vuoren sisällä ja heräävän vain silloin, kun koko alue on suuressa vaarassa.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Vuorijyrä",
+    numero: "#099",
+    tyyppi: "Rock & Ground",
+    tieteellinenNimi: "Montis colossus",
+    tieto: "Vuorijyrä on valtava legendaarinen Olio, jonka uskotaan muokanneen Kuusivaaran vuoret. Kun se liikkuu, kokonaiset rinteet voivat sortua sen ympärillä.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "Vuorijyra.png",
+    alue: "Kuusivaara"
+},
+{
+    nimi: "Revontulikettu",
+    numero: "#100",
+    tyyppi: "Electric & Fairy",
+    tieteellinenNimi: "Auroravulpes luminis",
+    tieto: "Revontulikettu ilmestyy vain kirkkaina öinä, jolloin taivaalla näkyy revontulia. Sen hännästä lähtevä valo pystyy rauhoittamaan raivostuneet Oliot.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: null,
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kuusivaara"
+},
+  {
+    "nimi": "Rakkoleväinen",
+    "numero": "#101",
+    "tyyppi": "Grass",
+    "tieteellinenNimi": "Alga fervens",
+    "tieto": "Rakkoleväinen on pieni, sitkeä Olio, joka on sopeutunut elämään Liekkikosken kuumissa rantavesissä. Sen keho koostuu paksusta, nahkamaisesta levästä, joka varastoi vettä ja kestää erittäin korkeita lämpötiloja.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Rakkotarttuja"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Rakkotarttuja",
+    "numero": "#102",
+    "tyyppi": "Grass & Water",
+    "tieteellinenNimi": "Alga tenax",
+    "tieto": "Kehittyessään se kasvattaa pitkiä, imukupeilla varustettuja lonkeroita. Se ankkuroituu tiukasti koskien pohjakiviin, jotta voimakkaat virtaukset eivät huuhtele sitä mennessään.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Rakkoleväinen",
+    "kehitysmuodot": ["Kelppikuningas"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kelppikuningas",
+    "numero": "#103",
+    "tyyppi": "Grass & Water",
+    "tieteellinenNimi": "Alga majestas",
+    "tieto": "Tämä valtava Olio hallitsee Liekkikosken pohjavesiä. Sen kehoa peittää paksu, panssarimainen merileväkruunu, ja se pystyy luomaan voimakkaita vesipyörteitä ympärilleen.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Rakkotarttuja",
+    "kehitysmuodot": ["Mega-Kelppikuningas"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Karsinapossu",
+    "numero": "#104",
+    "tyyppi": "Fire",
+    "tieteellinenNimi": "Porcellus cineris",
+    "tieto": "Karsinapossu on pieni, possumainen Olio, jonka iho on peittynyt hienoon, harmaaseen tuhkakerrokseen. Sen kärsästä tupsahtelee pieniä tulikipinöitä aina, kun se innostuu.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Tuhkakärsä"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Tuhkakärsä",
+    "numero": "#105",
+    "tyyppi": "Fire & Ground",
+    "tieteellinenNimi": "Aper cinerosus",
+    "tieto": "Se on kasvanut huomattavasti suuremmaksi ja villimmäksi. Sen selästä nousee jatkuva tuhkan ja savun pöllähdys, ja se pystyy kaivautumaan kuumaan maaperään salamannopeasti.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Karsinapossu",
+    "kehitysmuodot": ["Makarovio"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Makarovio",
+    "numero": "#106",
+    "tyyppi": "Fire & Ground",
+    "tieteellinenNimi": "Aper vulcanicus",
+    "tieto": "Massiivinen villisikamainen Olio, jonka hampaat hohtavat punaisena kuin sula laava. Se pystyy aiheuttamaan pieniä tulivuorenpurkauksia iskemällä sorkkansa maahan voimalla.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Tuhkakärsä",
+    "kehitysmuodot": ["Mega-Makarovio"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Höyryrapu",
+    "numero": "#107",
+    "tyyppi": "Water",
+    "tieteellinenNimi": "Cancercutus vaporis",
+    "tieto": "Liekkikosken tunnetuin asukas. Se elää geysiirien suulla. Sen paksun kuoren sisällä oleva vesi kuumenee koskien lämmöstä, mikä saa saksista nousemaan höyrypilven.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Painesaksi"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Painesaksi",
+    "numero": "#108",
+    "tyyppi": "Water & Fire",
+    "tieteellinenNimi": "Cancer pressura",
+    "tieto": "Sen sakset ovat muuttuneet mekaanisen näköisiksi höyrykattiloiksi. Se kerryttää saksensa sisään valtavan paineen, jonka se voi laukaista kiehuvana vesisuihkuna vastustajaa päin.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Höyryrapu",
+    "kehitysmuodot": ["Geysiirijätti"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Geysiirijätti",
+    "numero": "#109",
+    "tyyppi": "Water & Fire",
+    "tieteellinenNimi": "Cancer gigantus",
+    "tieto": "Tämän jättimäisen ravun selässä kantaa kokonaista pientä geysiiriä. Se pystyy peittämään koko taistelukentän paksun, polttavan sumuverhon taakse hetkessä.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Painesaksi",
+    "kehitysmuodot": ["Mega-Geysiirijätti"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kuohupallero",
+    "numero": "#110",
+    "tyyppi": "Water",
+    "tieteellinenNimi": "Aqua globulus",
+    "tieto": "Pieni vesipallero, joka pomppii koskien pinnalla. Se kerää itseensä mineraaleja ja kasvaa vähitellen painavammaksi.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Kuohumöykky"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kuohumöykky",
+    "numero": "#111",
+    "tyyppi": "Water & Rock",
+    "tieteellinenNimi": "Aquacorpus saxum",
+    "tieto": "Sen kehoon on tarttunut kosken pohjasta kokonaisia kivikerroksia. Se vierii koskea alas kuin elävä kivivyöry.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Kuohupallero",
+    "kehitysmuodot": ["Koskenjärkäle"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskenjärkäle",
+    "numero": "#112",
+    "tyyppi": "Water & Rock",
+    "tieteellinenNimi": "Aqua saxum magnus",
+    "tieto": "Valtava kivimäinen olio, joka voi pysäyttää pienen kosken hetkeksi asettumalla sen keskelle.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Kuohumöykky",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Sähinä",
+    "numero": "#113",
+    "tyyppi": "Electric",
+    "tieteellinenNimi": "Electrica susurrus",
+    "tieto": "Liekkikosken kallioiden raoissa piileskelevä pieni olio. Sen turkki rätisee aina, kun ympärillä oleva ilma kostuu.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Rätisijä"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Rätisijä",
+    "numero": "#114",
+    "tyyppi": "Electric & Water",
+    "tieteellinenNimi": "Electrica crepitus",
+    "tieto": "Se imee sähköä kosken vesipisaroista ja muuttaa ne pieniksi salamapalloiksi.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Sähinä",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskisammal",
+    "numero": "#115",
+    "tyyppi": "Grass",
+    "tieteellinenNimi": "Bryophyta torrentis",
+    "tieto": "Sen selkä on peittynyt paksuun sammalmattoon. Se viihtyy koskien kivien päällä, missä se näyttää tavalliselta kasvustolta.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Pärskä",
+    "numero": "#116",
+    "tyyppi": "Water",
+    "tieteellinenNimi": "Aquacuta asper",
+    "tieto": "Pieni, teräväkuonoinen olio, joka syö kosken pinnalla kelluvia hyönteisiä. Se voi sukeltaa veden alle silmänräpäyksessä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Pärskähirvi"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Pärskähirvi",
+    "numero": "#117",
+    "tyyppi": "Water & Dark",
+    "tieteellinenNimi": "Aquamonstrum asper",
+    "tieto": "Sen hurja ulkonäkö saa muut oliot pysymään kaukana. Se metsästää veden alla täysin äänettömästi.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Pärskä",
+    "kehitysmuodot": ["Koskikauhu"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskikauhu",
+    "numero": "#118",
+    "tyyppi": "Water & Dark",
+    "tieteellinenNimi": "Aquamonstrum terror",
+    "tieto": "Liekkikosken syvimpien altaiden salaperäinen vartija. Sen ympärille muodostuu jatkuvasti tumma pyörre.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Pärskähirvi",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Hiilloskivi",
+    "numero": "#119",
+    "tyyppi": "Fire & Rock",
+    "tieteellinenNimi": "Ignis lapillus",
+    "tieto": "Kuumissa koskikallioissa elävä pieni kivinen olio. Sen sisällä kytee pieni hiillos.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Vesisyöksy",
+    "numero": "#120",
+    "tyyppi": "Water & Flying",
+    "tieteellinenNimi": "Aqua volatus",
+    "tieto": "Se käyttää kosken voimakkaita virtauksia ponnahduslautana ja voi lentää veden pinnan yläpuolella useita metrejä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Koskikotka"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskikotka",
+    "numero": "#121",
+    "tyyppi": "Water & Flying",
+    "tieteellinenNimi": "Aquila torrentis",
+    "tieto": "Sen siivet ovat kehittyneet leveiksi ja vahvoiksi. Se saalistaa kosken yläpuolella lentäviä hyönteisiä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Vesisyöksy",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kipinänen",
+    "numero": "#122",
+    "tyyppi": "Electric",
+    "tieteellinenNimi": "Electrica parvus",
+    "tieto": "Pienen pieni sähköolio, jonka voi löytää vain kosken vesipisaroiden välistä. Sen keho välähtää jatkuvasti.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Kipinäpallo"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kipinäpallo",
+    "numero": "#123",
+    "tyyppi": "Electric & Fairy",
+    "tieteellinenNimi": "Electrica globus",
+    "tieto": "Sen ympärille muodostuu kirkas energiakehä. Öisin se näyttää kosken yllä leijuvalta tähdeltä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Kipinänen",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kosteikko",
+    "numero": "#124",
+    "tyyppi": "Water & Grass",
+    "tieteellinenNimi": "Palustris vivus",
+    "tieto": "Sen keho muistuttaa pientä kelluvaa kosteikkoa. Selässä kasvaa vesikasveja, jotka puhdistavat sen ympärillä olevaa vettä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kiehumus",
+    "numero": "#125",
+    "tyyppi": "Fire & Water",
+    "tieteellinenNimi": "Aqua fervor",
+    "tieto": "Sen ruumiin toinen puoli on kiehuvan kuuma ja toinen jäätävän kylmä. Se viihtyy siellä, missä kuuma lähde kohtaa kosken.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Kiehumyrsky"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kiehumyrsky",
+    "numero": "#126",
+    "tyyppi": "Fire & Water",
+    "tieteellinenNimi": "Aqua fervor tempestas",
+    "tieto": "Se pystyy nostamaan kosken veden kiehuvaksi pyörteeksi. Sen liikkeet synnyttävät ympärilleen valtavan höyrypilven.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Kiehumus",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kivikorva",
+    "numero": "#127",
+    "tyyppi": "Rock & Psychic",
+    "tieteellinenNimi": "Saxum auris",
+    "tieto": "Sen suuret korvat ovat kovaa kiveä. Se pystyy kuulemaan veden alla olevia ääniä kilometrien päästä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Höyryhiisi",
+    "numero": "#128",
+    "tyyppi": "Fire & Ghost",
+    "tieteellinenNimi": "Vapor daemon",
+    "tieto": "Kuumista koskista nousevan höyryn sekaan ilmestyvä outo olio. Se katoaa heti, jos joku yrittää koskettaa sitä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Höyrypiru"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Höyrypiru",
+    "numero": "#129",
+    "tyyppi": "Fire & Ghost",
+    "tieteellinenNimi": "Vapor diabolus",
+    "tieto": "Se pystyy muuttamaan koko kehonsa kuumaksi höyryksi ja kulkemaan pienimmistäkin kallionraoista.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Höyryhiisi",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskikärpänen",
+    "numero": "#130",
+    "tyyppi": "Bug & Water",
+    "tieteellinenNimi": "Insecta torrentis",
+    "tieto": "Se viettää koko elämänsä kosken kuohujen keskellä. Sen siivet ovat lähes näkymättömät.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Koskikorento"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskikorento",
+    "numero": "#131",
+    "tyyppi": "Bug & Water",
+    "tieteellinenNimi": "Insecta torrentis maior",
+    "tieto": "Sen läpinäkyvät siivet pystyvät ohjaamaan veden pieniä pisaroita. Se voi lentää vastavirtaan tuntikausia.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Koskikärpänen",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Salamasilmä",
+    "numero": "#132",
+    "tyyppi": "Electric & Psychic",
+    "tieteellinenNimi": "Fulmen oculus",
+    "tieto": "Sen yksi silmä välähtää aina ennen ukkosta. Tutkijat uskovat sen aistivan sähköä ilman halki.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Rantamöyriäinen",
+    "numero": "#133",
+    "tyyppi": "Ground & Water",
+    "tieteellinenNimi": "Talpa riparius",
+    "tieto": "Se kaivaa tunneleita kosken rantapenkkaan ja käyttää vettä tunnelien jäähdyttämiseen.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Rantakaivaja"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Rantakaivaja",
+    "numero": "#134",
+    "tyyppi": "Ground & Steel",
+    "tieteellinenNimi": "Talpa ferrum",
+    "tieto": "Sen kynnet ovat muuttuneet metallisiksi. Se pystyy kaivamaan kovankin kallion läpi.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Rantamöyriäinen",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kuplakieli",
+    "numero": "#135",
+    "tyyppi": "Water",
+    "tieteellinenNimi": "Aqua lingua",
+    "tieto": "Sen pitkä kieli muodostaa veden alla kuplia, joiden avulla se viestii muiden yksilöiden kanssa.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Räiskis",
+    "numero": "#136",
+    "tyyppi": "Electric & Fighting",
+    "tieteellinenNimi": "Fulmen pugna",
+    "tieto": "Se lataa nyrkkinsä sähköllä ennen kuin iskee. Kosken läheisyydessä sen voima kasvaa huomattavasti.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Räiskijä"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Räiskijä",
+    "numero": "#137",
+    "tyyppi": "Electric & Fighting",
+    "tieteellinenNimi": "Fulmen pugilator",
+    "tieto": "Sen iskut synnyttävät pieniä salamoita. Se harjoittelee lyömällä kosken keskellä olevia kiviä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Räiskis",
+    "kehitysmuodot": ["Salamanyrkki"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Salamanyrkki",
+    "numero": "#138",
+    "tyyppi": "Electric & Fighting",
+    "tieteellinenNimi": "Fulmen pugnus",
+    "tieto": "Sen nyrkit ovat jatkuvasti sähköisen energian ympäröimät. Yksi isku voi halkaista paksun kivipaaden.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Räiskijä",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Usvani",
+    "numero": "#139",
+    "tyyppi": "Water & Ghost",
+    "tieteellinenNimi": "Nebula aqua",
+    "tieto": "Pieni sumusta muodostunut olio, joka ilmestyy aikaisin aamulla kosken ylle.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Usvavaeltaja"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Usvavaeltaja",
+    "numero": "#140",
+    "tyyppi": "Water & Ghost",
+    "tieteellinenNimi": "Nebula peregrinus",
+    "tieto": "Se vaeltaa sumussa ilman ääntä. Sen nähneet sanovat sen tietävän kaikki kosken salaiset reitit.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Usvani",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskisieni",
+    "numero": "#141",
+    "tyyppi": "Grass & Poison",
+    "tieteellinenNimi": "Fungus torrentis",
+    "tieto": "Se kasvaa jatkuvasti märillä kivillä. Sen itiöt värjäävät veden hetkeksi vihertäväksi.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Pore",
+    "numero": "#142",
+    "tyyppi": "Water & Fairy",
+    "tieteellinenNimi": "Aqua bulla",
+    "tieto": "Sen keho on täynnä pieniä hohtavia kuplia. Se pomppii kosken pinnalla kuin saippuakupla.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Poreilija"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Poreilija",
+    "numero": "#143",
+    "tyyppi": "Water & Fairy",
+    "tieteellinenNimi": "Aqua bullator",
+    "tieto": "Sen ympärille muodostuu satoja pieniä kuplia. Kuplat heijastavat valoa niin kirkkaasti, että niitä käytetään joskus majakoina.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Pore",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Rantakääpä",
+    "numero": "#144",
+    "tyyppi": "Grass & Rock",
+    "tieteellinenNimi": "Fungus saxicola",
+    "tieto": "Kivien kyljessä kasvava kääpämäinen olio. Sen kova kuori suojaa sitä kosken voimakkaalta virtaukselta.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Virtahepo",
+    "numero": "#145",
+    "tyyppi": "Water",
+    "tieteellinenNimi": "Fluvius equus",
+    "tieto": "Nimestään huolimatta se ei ole hevonen. Se muistuttaa pitkärunkoista vesieläintä ja ui jatkuvasti vastavirtaan.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Virtaratsu"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Virtaratsu",
+    "numero": "#146",
+    "tyyppi": "Water & Fighting",
+    "tieteellinenNimi": "Fluvius eques",
+    "tieto": "Sen jalat ovat vahvistuneet niin, että se pystyy juoksemaan veden pintaa pitkin.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Virtahepo",
+    "kehitysmuodot": ["Koskenruhtinas"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Koskenruhtinas",
+    "numero": "#147",
+    "tyyppi": "Water & Fighting",
+    "tieteellinenNimi": "Fluvius rex",
+    "tieto": "Liekkikosken voimakkaimpia uimareita. Se hallitsee kosken virtoja valtavilla evämäisillä raajoillaan.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Virtaratsu",
+    "kehitysmuodot": ["Mega-Koskenruhtinas"],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Magmasydän",
+    "numero": "#148",
+    "tyyppi": "Fire & Rock",
+    "tieteellinenNimi": "Cor vulcanitium",
+    "tieto": "Muinainen jättiläinen, joka nukkuu Liekkikosken syvimmässä tulivuoressa. Legendan mukaan sen sydämen lyönnit säätelevät koko alueen laavavirtoja.",
+    "harvinaisuus": "Legendaarinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Kataraktos",
+    "numero": "#149",
+    "tyyppi": "Water & Dragon",
+    "tieteellinenNimi": "Cataractus dominus",
+    "tieto": "Liekkikosken suurimman ja vaarallisimman vesiputouksen alla asuva vesilohikäärme. Se pystyy rauhoittamaan rajuimmatkin kosket tai nostamaan valtavan hyökyaallon silmänräpäyksessä.",
+    "harvinaisuus": "Legendaarinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+  {
+    "nimi": "Ukkosroihu",
+    "numero": "#150",
+    "tyyppi": "Electric & Fire",
+    "tieteellinenNimi": "Fulmen igneus",
+    "tieto": "Lentävä feenikslintu, joka syntyy uudelleen puhtaasta plasmasta ja laavasta. Kun se räväyttää siipiään, taivaalta iskee salamoita ja maasta suihkuaa geysiireitä.",
+    "harvinaisuus": "Legendaarinen",
+    "esikehitys": null,
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Liekkikoski"
+  },
+{
+  "nimi": "Varjolyhty",
+  "numero": "#151",
+  "tyyppi": "Ghost",
+  "tieteellinenNimi": "Phasma lucens",
+  "tieto": "Leijuva, aavemaista valoa hohtava pieni olento, joka houkuttelee seikkailijoita eksyksiin sumussa. Se ruokkii liekkiään ympärillään olevalla mystisellä energialla.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kryptakrooni"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kryptakrooni",
+  "numero": "#152",
+  "tyyppi": "Ghost & Dark",
+  "tieteellinenNimi": "Phasma antiquum",
+  "tieto": "Kehittyessään se sulautuu vanhoihin hautakiviin ja metallisiin lyhdynosiin. Se pystyy muuttumaan täysin näkymättömäksi ja liikkumaan varjojen seassa.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Varjolyhty",
+  "kehitysmuodot": ["Kalmistokeisari"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmistokeisari",
+  "numero": "#153",
+  "tyyppi": "Ghost & Dark",
+  "tieteellinenNimi": "Phasma imperator",
+  "tieto": "Valtava aavemainen olento, joka hallitsee Haamumaan raunioita. Sen kruunu loistaa pahaenteistä purppuraa valoa, joka voi lamauttaa vastustajat pelosta.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Kryptakrooni",
+  "kehitysmuodot": ["Mega-Kalmistokeisari"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Sumuhaukkuri",
+  "numero": "#154",
+  "tyyppi": "Dark",
+  "tieteellinenNimi": "Canis nebulosus",
+  "tieto": "Pieni koiramainen Olio, jonka turkki näyttää valuvan sumua. Se liikkuu äänettömästi Haamumaan kuihtuneiden puiden seassa ja tarkkailee kulkijoita.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Usvanraatelija"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Usvanraatelija",
+  "numero": "#155",
+  "tyyppi": "Dark & Ghost",
+  "tieteellinenNimi": "Canis umbrosus",
+  "tieto": "Sen hampaat ja kynnet ovat pitkät ja terävät. Se pystyy manipuloimaan ympärillään olevaa usvaa luodakseen illuusioita ja eksyttääkseen saaliinsa.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Sumuhaukkuri",
+  "kehitysmuodot": ["Tuonensusi"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Tuonensusi",
+  "numero": "#156",
+  "tyyppi": "Dark & Ghost",
+  "tieteellinenNimi": "Canis infernalis",
+  "tieto": "Majesteettinen ja pelottava musta susi, jonka silmät palavat kylmää sinistä tulta. Sen ulvonta Haamumaan yössä saa jopa vahvimmat oliot perääntymään.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Usvanraatelija",
+  "kehitysmuodot": ["Mega-Tuonensusi"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Mätämöykky",
+  "numero": "#157",
+  "tyyppi": "Poison",
+  "tieteellinenNimi": "Limo putridus",
+  "tieto": "Haamumaan haisevilla soilla elävä löllyvä Olio. Se koostuu pääosin myrkyllisestä mudasta ja mätänevistä lehdistä, ja se jättää jälkeensä vihreää limaa.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Limaloiske"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Limaloiske",
+  "numero": "#158",
+  "tyyppi": "Poison & Ground",
+  "tieteellinenNimi": "Limo toxicus",
+  "tieto": "Se on kasvattanut kovan mutakuoren itselleen. Se pystyy ampumaan kehostaan erittäin hapanta ja syövyttävää myrkkylimaa, joka sulattaa heikoimmat suojaukset.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Mätämöykky",
+  "kehitysmuodot": ["Toksiinijärkäle"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Toksiinijärkäle",
+  "numero": "#159",
+  "tyyppi": "Poison & Ground",
+  "tieteellinenNimi": "Limo gigantus",
+  "tieto": "Valtava, suomainen hirviö, jonka pelkkä lähellä olo saa ilman muuttumaan myrkylliseksi. Se pystyy upottamaan vastustajansa elävältä mätänevään suomutaansa.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Limaloiske",
+  "kehitysmuodot": ["Mega-Toksiinijärkäle"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Hautakiviö",
+  "numero": "#160",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Saxum sepulcrum",
+  "tieto": "Pieni liikkuva hautakivi, joka viettää päivänsä vanhojen hautojen välissä. Se vaihtaa paikkaa aina yön aikana.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Hautakivinen"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Hautakivinen",
+  "numero": "#161",
+  "tyyppi": "Rock & Ghost",
+  "tieteellinenNimi": "Saxum sepulcralis",
+  "tieto": "Sen kylkeen on ilmestynyt salaperäisiä kirjoituksia, jotka vaihtuvat joka täysikuulla.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Hautakiviö",
+  "kehitysmuodot": ["Hautajärkäle"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Hautajärkäle",
+  "numero": "#162",
+  "tyyppi": "Rock & Ghost",
+  "tieteellinenNimi": "Saxum sepulcrum magnus",
+  "tieto": "Valtava elävä hautakivi, joka suojelee vanhimpia hautoja. Sen ympärillä leijuu jatkuvasti kylmä sumu.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Hautakivinen",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kummituskupla",
+  "numero": "#163",
+  "tyyppi": "Ghost",
+  "tieteellinenNimi": "Spiritus bulla",
+  "tieto": "Pieni aavemainen kupla, joka leijuu hautausmaan yllä. Se puhkeaa, jos siihen kosketaan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmalintu",
+  "numero": "#164",
+  "tyyppi": "Dark & Flying",
+  "tieteellinenNimi": "Vespertilio mortis",
+  "tieto": "Se nukkuu vanhojen hautakivien alla ja lähtee metsästämään vasta auringon laskettua.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kalmanlepakko"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmanlepakko",
+  "numero": "#165",
+  "tyyppi": "Dark & Flying",
+  "tieteellinenNimi": "Vespertilio mortifer",
+  "tieto": "Sen siivet ovat muuttuneet lähes kokonaan varjoksi. Se voi kadota pimeään kesken lennon.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kalmalintu",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Murhemato",
+  "numero": "#166",
+  "tyyppi": "Bug & Ghost",
+  "tieteellinenNimi": "Vermis luctus",
+  "tieto": "Hautojen mullassa elävä matomainen olio. Se syö vain vanhojen kukkien kuihtuneita terälehtiä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Surutoukka"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Surutoukka",
+  "numero": "#167",
+  "tyyppi": "Bug & Ghost",
+  "tieteellinenNimi": "Larva luctus",
+  "tieto": "Sen ympärillä leijuu jatkuvasti pieniä sinisiä valoja, jotka muistuttavat kyyneliä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Murhemato",
+  "kehitysmuodot": ["Itkijämato"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Itkijämato",
+  "numero": "#168",
+  "tyyppi": "Ghost & Dark",
+  "tieteellinenNimi": "Vermis lacrima",
+  "tieto": "Sen ääni muistuttaa kaukaista itkua. Se liikkuu maan alla ja jättää jälkeensä kylmänä hohtavan vanan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Surutoukka",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmankallo",
+  "numero": "#169",
+  "tyyppi": "Ghost",
+  "tieteellinenNimi": "Cranium anima",
+  "tieto": "Leijuva kallo, jonka silmäkuopissa palaa kaksi pientä sinistä liekkiä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kallokauhu"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kallokauhu",
+  "numero": "#170",
+  "tyyppi": "Ghost & Dark",
+  "tieteellinenNimi": "Cranium terror",
+  "tieto": "Sen liekit ovat kasvaneet suuriksi ja sen leijuminen saa ympäröivät hautakivet värisemään.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kalmankallo",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Varjokissa",
+  "numero": "#171",
+  "tyyppi": "Dark",
+  "tieteellinenNimi": "Felis umbra",
+  "tieto": "Haamumaan varjoissa liikkuva kissamainen olio. Sen silmät näkyvät pimeässä kaukaa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Varjokynsi"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Varjokynsi",
+  "numero": "#172",
+  "tyyppi": "Dark & Ghost",
+  "tieteellinenNimi": "Felis unguis umbra",
+  "tieto": "Sen kynnet ovat muuttuneet varjoiksi, jotka voivat venyä useiden metrien pituisiksi.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Varjokissa",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kylmäkyynel",
+  "numero": "#173",
+  "tyyppi": "Ice & Ghost",
+  "tieteellinenNimi": "Lacrima frigida",
+  "tieto": "Sen ruumis koostuu jäisestä kyynelmäisestä aineesta. Se syntyy vanhojen hautojen lähettyvillä kylminä öinä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Hautahämähäkki",
+  "numero": "#174",
+  "tyyppi": "Bug & Dark",
+  "tieteellinenNimi": "Aranea sepulcrum",
+  "tieto": "Se kutoo verkkojaan hautakivien väliin. Sen verkot ovat lähes näkymättömiä kuunvalossa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kalmaverkko"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmaverkko",
+  "numero": "#175",
+  "tyyppi": "Bug & Ghost",
+  "tieteellinenNimi": "Aranea animae",
+  "tieto": "Sen verkkoihin tarttuvat joskus pienet aavevalot. Se käyttää niitä houkutellakseen muita olioita lähelleen.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Hautahämähäkki",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Mullanuttu",
+  "numero": "#176",
+  "tyyppi": "Ground & Ghost",
+  "tieteellinenNimi": "Humus pallium",
+  "tieto": "Pieni multaan kääriytynyt olio, joka näyttää kaukaa pieneltä maakasalta.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Multamörkö"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Multamörkö",
+  "numero": "#177",
+  "tyyppi": "Ground & Ghost",
+  "tieteellinenNimi": "Humus monstrum",
+  "tieto": "Sen kehoon tarttuu jatkuvasti uutta multaa. Lopulta siitä tulee suuri hautausmaan mullasta muodostunut olio.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Mullanuttu",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmakoi",
+  "numero": "#178",
+  "tyyppi": "Bug & Ghost",
+  "tieteellinenNimi": "Lepidoptera mortis",
+  "tieto": "Sen siipien kuvio muistuttaa pieniä hautakiviä. Se lentää vain öisin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kalmaperhonen"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmaperhonen",
+  "numero": "#179",
+  "tyyppi": "Bug & Ghost",
+  "tieteellinenNimi": "Papilio mortis",
+  "tieto": "Sen siipien reunoista irtoaa pieniä hohtavia hiutaleita, jotka katoavat ennen kuin osuvat maahan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kalmakoi",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Hautalyhty",
+  "numero": "#180",
+  "tyyppi": "Ghost & Fire",
+  "tieteellinenNimi": "Lanterna sepulcrum",
+  "tieto": "Vanhan lyhdyn näköinen olio, jonka sisällä palaa ikuinen vihreä liekki.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmankello",
+  "numero": "#181",
+  "tyyppi": "Ghost & Steel",
+  "tieteellinenNimi": "Campana mortis",
+  "tieto": "Vanhan kellon muotoinen olio. Sen ääni kuuluu joskus hautausmaan toiselta laidalta, vaikka se ei liiku.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kuolonkello"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kuolonkello",
+  "numero": "#182",
+  "tyyppi": "Ghost & Steel",
+  "tieteellinenNimi": "Campana funebris",
+  "tieto": "Sen kumahdus saa kaikki lähellä olevat aaveoliot pysähtymään hetkeksi.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kalmankello",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Hautakärpänen",
+  "numero": "#183",
+  "tyyppi": "Bug & Poison",
+  "tieteellinenNimi": "Musca sepulcrum",
+  "tieto": "Haamumaan vanhoissa kryptissa elävä pieni kärpänen. Sen siivet ovat tumman violetit.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kalmakärpänen"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmakärpänen",
+  "numero": "#184",
+  "tyyppi": "Bug & Poison",
+  "tieteellinenNimi": "Musca anima",
+  "tieto": "Sen ruumis on kasvanut suureksi ja sen siivistä lähtee outoa surinaa, joka saa kynttilät lepattamaan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Hautakärpänen",
+  "kehitysmuodot": ["Mätäkärpänen"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Mätäkärpänen",
+  "numero": "#185",
+  "tyyppi": "Bug & Poison",
+  "tieteellinenNimi": "Musca putris",
+  "tieto": "Sen ympärille muodostuu vihertävä sumu. Se viihtyy vain hautausmaan vanhimmissa osissa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kalmakärpänen",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Surusilmä",
+  "numero": "#186",
+  "tyyppi": "Psychic & Ghost",
+  "tieteellinenNimi": "Oculus luctus",
+  "tieto": "Yksinäinen kelluva silmä, joka näyttää seuraavan kaikkia liikkujia.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kryptakääpiö",
+  "numero": "#187",
+  "tyyppi": "Dark & Ground",
+  "tieteellinenNimi": "Pygmaeus crypta",
+  "tieto": "Pieni kryptissa asuva olio, joka kerää vanhoja kolikoita ja hautojen koristeita.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kryptavartija"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kryptavartija",
+  "numero": "#188",
+  "tyyppi": "Dark & Steel",
+  "tieteellinenNimi": "Custos crypta",
+  "tieto": "Se vartioi kryptojen ovia eikä päästä ketään sisään ilman lupaansa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kryptakääpiö",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Varjokynttilä",
+  "numero": "#189",
+  "tyyppi": "Ghost & Fire",
+  "tieteellinenNimi": "Candela umbra",
+  "tieto": "Sen liekki ei valaise ympäristöä vaan tekee ympäröivistä varjoista entistä tummempia.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kalmakynttilä"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmakynttilä",
+  "numero": "#190",
+  "tyyppi": "Ghost & Fire",
+  "tieteellinenNimi": "Candela anima",
+  "tieto": "Sen liekissä näkyy toisinaan pieniä kasvoja. Se pystyy sytyttämään muita kynttilöitä ilman kosketusta.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Varjokynttilä",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kylmähaamu",
+  "numero": "#191",
+  "tyyppi": "Ice & Ghost",
+  "tieteellinenNimi": "Spiritus gelu",
+  "tieto": "Sen lähellä lämpötila laskee nopeasti. Se voi kulkea seinien ja hautakivien läpi.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Jäähaamu"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Jäähaamu",
+  "numero": "#192",
+  "tyyppi": "Ice & Ghost",
+  "tieteellinenNimi": "Spiritus glacies",
+  "tieto": "Sen keho muuttuu läpikuultavaksi jääksi. Se voi jäädyttää hautausmaan lätäköitä pelkällä läsnäolollaan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kylmähaamu",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Hautasammal",
+  "numero": "#193",
+  "tyyppi": "Grass & Ghost",
+  "tieteellinenNimi": "Bryophyta sepulcrum",
+  "tieto": "Vanhoilla hautakivillä kasvava olio, joka herää liikkeelle vain öisin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kalmaköynnös"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmaköynnös",
+  "numero": "#194",
+  "tyyppi": "Grass & Ghost",
+  "tieteellinenNimi": "Vitis mortis",
+  "tieto": "Sen köynnökset kasvavat hautakivien ympärille ja muodostavat luonnollisia holveja.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Hautasammal",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Luukala",
+  "numero": "#195",
+  "tyyppi": "Water & Ghost",
+  "tieteellinenNimi": "Piscis ossis",
+  "tieto": "Luurankomainen kala, joka ui Haamumaan maanalaisissa vesialtaissa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Luulohi"],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Luulohi",
+  "numero": "#196",
+  "tyyppi": "Water & Ghost",
+  "tieteellinenNimi": "Salmo ossis",
+  "tieto": "Suurempi luukala, joka ui hautausmaan alla virtaavissa maanalaisissa vesissä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Luukala",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kryptasilmä",
+  "numero": "#197",
+  "tyyppi": "Psychic & Dark",
+  "tieteellinenNimi": "Oculus crypta",
+  "tieto": "Kryptojen katossa leijuva silmä, joka vartioi hautojen salaisuuksia.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kryptalordi",
+  "numero": "#198",
+  "tyyppi": "Ghost & Dark",
+  "tieteellinenNimi": "Dominus sepulchri",
+  "tieto": "Unohdetun Haamumaan alkuperäinen hallitsija. Se istuu murenevalla valtaistuimellaan sumun keskellä ja kykenee hallitsemaan varjoja sekä avaamaan portteja tuonpuoleiseen.",
+  "harvinaisuus": "Legendaarinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kalmanhenki",
+  "numero": "#199",
+  "tyyppi": "Ghost & Poison",
+  "tieteellinenNimi": "Spiritus mortifer",
+  "tieto": "Aineeton, leijuva usvamassa, jolla on hohtavat silmät. Sen kerrotaan olevan Haamumaan tuhansien vuosien aikana kertyneen mystisen energian ja sumun ruumiillistuma.",
+  "harvinaisuus": "Legendaarinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Tuonelankauris",
+  "numero": "#200",
+  "tyyppi": "Dark & Psychic",
+  "tieteellinenNimi": "Cervus stygielis",
+  "tieto": "Synkkä ja majesteettinen poro-olio, jonka sarvet hehkuvat aavemaista sinistä valoa. Se kulkee äänettömästi yön pimeydessä ja näkee suoraan elävien olentojen sieluihin.",
+  "harvinaisuus": "Legendaarinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Haamumaa"
+},
+{
+  "nimi": "Kvartsikettu",
+  "numero": "#201",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Vulpes quartzum",
+  "tieto": "Kvartsikettu asustaa kimaltelevissa luolissa. Sen kehoon kasvanut kvartsi heijastaa valoa ja sokaisee uhkaajat.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Jalokivikettu"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Jalokivikettu",
+  "numero": "#202",
+  "tyyppi": "Rock & Psychic",
+  "tieteellinenNimi": "Vulpes gemmeus",
+  "tieto": "Kehittyessään sen otsaan kasvaa suuri, voimakas kristalli. Se pystyy siirtämään esineitä pelkällä ajatuksen voimalla ja ennustamaan vastustajan liikkeet.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Kvartsikettu",
+  "kehitysmuodot": ["Prismakettu"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Prismakettu",
+  "numero": "#203",
+  "tyyppi": "Rock & Psychic",
+  "tieteellinenNimi": "Vulpes prismaticus",
+  "tieto": "Majesteettinen kettu, jonka turkki loistaa sateenkaaren väreissä. Se voi luoda kristallisia illuusioita ja ampua otsakristallistaan puhtaan psyykkisen lasersäteen.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Jalokivikettu",
+  "kehitysmuodot": ["Mega-Prismakettu"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Mielipörriäinen",
+  "numero": "#204",
+  "tyyppi": "Psychic",
+  "tieteellinenNimi": "Apis mentalis",
+  "tieto": "Pieni, leijuva hyönteismäinen Olio, joka surisee oudolla taajuudella. Sen surina saa ympärillä olevat oliot tuntemaan olonsa joko hyvin rauhalliseksi tai hämmentyneeksi.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Hypnoperho"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Hypnoperho",
+  "numero": "#205",
+  "tyyppi": "Psychic & Fairy",
+  "tieteellinenNimi": "Papilio hypnoticus",
+  "tieto": "Sen siipien kauniit, pyörivät kuviot lumoavat kenet tahansa, joka katsoo niitä liian pitkään. Se pystyy vaivuttamaan vastustajansa hypnoottiseen uneen kesken taistelun.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Mielipörriäinen",
+  "kehitysmuodot": ["Psykoperho"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Psykoperho",
+  "numero": "#206",
+  "tyyppi": "Psychic & Fairy",
+  "tieteellinenNimi": "Papilio cosmicus",
+  "tieto": "Suuri ja lumoava perhosolio, jonka siivet hohtavat kuin kosminen tähtitaivas. Se pystyy levittämään ympärilleen taikapölyä, joka kääntää painovoiman hetkellisesti ylösalaisin.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Hypnoperho",
+  "kehitysmuodot": ["Mega-Psykoperho"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Hohtomuru",
+  "numero": "#207",
+  "tyyppi": "Fairy",
+  "tieteellinenNimi": "Granum mica",
+  "tieto": "Pieni, leijuva valopallo, joka jättää jälkeensä kimaltelevaa keijupölyä. Se piiloutuu usein suurten kristallien sekaan ja auttaa eksyneitä matkustajia.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kimallepallo"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kimallepallo",
+  "numero": "#208",
+  "tyyppi": "Fairy & Rock",
+  "tieteellinenNimi": "Globus splendens",
+  "tieto": "Se on kasvattanut ympärilleen suojakuoren kimaltelevista kristallisiruista. Se pystyy pyörimään hurjaa vauhtia ja ampumaan kuorestaan valonsäteitä.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Hohtomuru",
+  "kehitysmuodot": ["Kristallikuningatar"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kristallikuningatar",
+  "numero": "#209",
+  "tyyppi": "Fairy & Rock",
+  "tieteellinenNimi": "Regina crystallina",
+  "tieto": "Upea, humanoidimainen kristalliolento, joka hallitsee ylängön korkeimpia huippuja. Sen ympärillä leijuu suojaava kristallikenttä, joka heijastaa kaikki erikoishyökkäykset takaisin.",
+  "harvinaisuus": "Harvinainen",
+  "esikehitys": "Kimallepallo",
+  "kehitysmuodot": ["Mega-Kristallikuningatar"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kivisäde",
+  "numero": "#210",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Petra radiata",
+  "tieto": "Sen selässä kasvaa pieniä kristalleja, jotka heijastavat auringonvaloa kirkkaiksi säteiksi.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Sädekivi"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Sädekivi",
+  "numero": "#211",
+  "tyyppi": "Rock & Fairy",
+  "tieteellinenNimi": "Petra luminis",
+  "tieto": "Sen kyljissä olevat kristallit keräävät valoa ja vapauttavat sitä öisin pehmeänä hehkuna.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kivisäde",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kvartsikuono",
+  "numero": "#212",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Canis quartzus",
+  "tieto": "Sen kuono on kovaa kvartsia, jolla se pystyy kaivamaan kristallikallioon tunneleita.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kristallikoira"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kristallikoira",
+  "numero": "#213",
+  "tyyppi": "Rock & Ice",
+  "tieteellinenNimi": "Canis crystallus",
+  "tieto": "Sen turkkiin kasvaa kirkkaita kiteitä, jotka hohtavat pakkasöinä sinertävinä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kvartsikuono",
+  "kehitysmuodot": ["Kvartsisusi"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kvartsisusi",
+  "numero": "#214",
+  "tyyppi": "Rock & Ice",
+  "tieteellinenNimi": "Canis magnus quartzus",
+  "tieto": "Sen valtavat kristallihampaat voivat halkaista paksunkin jääkerroksen yhdellä puraisulla.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kristallikoira",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kimalisko",
+  "numero": "#215",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Lacerta micans",
+  "tieto": "Pienen liskon suomut ovat täynnä hiekanvärisiä kiteitä, jotka kimaltelevat sen liikkuessa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Särökivi",
+  "numero": "#216",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Petra fissura",
+  "tieto": "Sen vartalossa kulkee luonnollisia halkeamia, joiden läpi näkyy kirkas kristalliydin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Halkeamakivi"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Halkeamakivi",
+  "numero": "#217",
+  "tyyppi": "Rock & Ground",
+  "tieteellinenNimi": "Petra fractura",
+  "tieto": "Sen halkeamat ovat kasvaneet suuremmiksi, ja niistä purkautuu hienoa kristallipölyä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Särökivi",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kideperhonen",
+  "numero": "#218",
+  "tyyppi": "Bug & Fairy",
+  "tieteellinenNimi": "Papilio crystallis",
+  "tieto": "Sen siivet näyttävät ohuilta lasilevyiltä ja hajottavat auringonvalon sateenkaaren väreiksi.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Sateenkaariyökkönen"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Sateenkaariyökkönen",
+  "numero": "#219",
+  "tyyppi": "Bug & Fairy",
+  "tieteellinenNimi": "Noctua iridica",
+  "tieto": "Sen suuret siivet hohtavat eri väreissä sen lentäessä pimeässä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kideperhonen",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Jääkide",
+  "numero": "#220",
+  "tyyppi": "Ice",
+  "tieteellinenNimi": "Glacies crystallum",
+  "tieto": "Se näyttää pieneltä jääpalalta, mutta liikkuu nopeasti kallionhalkeamissa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidekorva",
+  "numero": "#221",
+  "tyyppi": "Psychic & Rock",
+  "tieteellinenNimi": "Auritus gemma",
+  "tieto": "Sen korvien sisällä olevat kristallit vahvistavat pienimmätkin äänet.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kaikukide"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kaikukide",
+  "numero": "#222",
+  "tyyppi": "Psychic & Rock",
+  "tieteellinenNimi": "Auritus resonans",
+  "tieto": "Sen kristallikorvat pystyvät lähettämään kallioiden läpi voimakkaita kaikuja.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kidekorva",
+  "kehitysmuodot": ["Kristallikaiku"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kristallikaiku",
+  "numero": "#223",
+  "tyyppi": "Psychic & Rock",
+  "tieteellinenNimi": "Auritus resonans maximus",
+  "tieto": "Sen ääni voi kiertää kokonaisen vuoren ja palata takaisin täydellisenä kaikuna.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kaikukide",
+  "kehitysmuodot": ["Mega-Kristallikaiku"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidepupu",
+  "numero": "#224",
+  "tyyppi": "Normal & Rock",
+  "tieteellinenNimi": "Lepus gemmatus",
+  "tieto": "Sen korvissa kasvavat pienet kristallit, jotka värisevät sen hypätessä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kristallijänis"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kristallijänis",
+  "numero": "#225",
+  "tyyppi": "Rock & Fairy",
+  "tieteellinenNimi": "Lepus gemmatus maior",
+  "tieto": "Sen korvakiteet kasvavat pitkiksi ja saavat sen kuulemaan maan alla liikkuvat oliot.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kidepupu",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Loistekivi",
+  "numero": "#226",
+  "tyyppi": "Rock & Electric",
+  "tieteellinenNimi": "Petra fulgur",
+  "tieto": "Sen sisällä syntyy pieniä sähköpurkauksia, jotka saavat pinnan välkkymään.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Sähkökide"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Sähkökide",
+  "numero": "#227",
+  "tyyppi": "Electric & Rock",
+  "tieteellinenNimi": "Petra electricus",
+  "tieto": "Sen kristalliydin varastoi staattista sähköä ja vapauttaa sen kosketuksesta.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Loistekivi",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidekotilo",
+  "numero": "#228",
+  "tyyppi": "Water & Rock",
+  "tieteellinenNimi": "Concha crystallina",
+  "tieto": "Sen kuori on kasvanut läpinäkyväksi ja kimaltelee veden alla.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kristallikotilo"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kristallikotilo",
+  "numero": "#229",
+  "tyyppi": "Water & Rock",
+  "tieteellinenNimi": "Concha magnus crystallina",
+  "tieto": "Sen valtava kristallikuori suojaa sitä vuoriston kylmiltä vesiltä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kidekotilo",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Säihkylintu",
+  "numero": "#230",
+  "tyyppi": "Flying & Rock",
+  "tieteellinenNimi": "Avis micans",
+  "tieto": "Sen höyhenissä on pieniä kivikiteitä, jotka kimaltelevat lennon aikana.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kidehaukka"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidehaukka",
+  "numero": "#231",
+  "tyyppi": "Flying & Rock",
+  "tieteellinenNimi": "Falco crystallus",
+  "tieto": "Sen siipisulat ovat teräviä kuin ohuet kristallilevyt.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Säihkylintu",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kultakivi",
+  "numero": "#232",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Petra aurea",
+  "tieto": "Sen pinnassa olevat kultaiset suonet tekevät siitä helposti tunnistettavan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kristallimato",
+  "numero": "#233",
+  "tyyppi": "Bug & Rock",
+  "tieteellinenNimi": "Vermis crystallus",
+  "tieto": "Se kaivautuu kristallihiekan sisään ja jättää jälkeensä hohtavan tunnelin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kidemato"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidemato",
+  "numero": "#234",
+  "tyyppi": "Bug & Rock",
+  "tieteellinenNimi": "Vermis gemmatus",
+  "tieto": "Sen selkäkilvet ovat muuttuneet koviksi kristallilevyiksi.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kristallimato",
+  "kehitysmuodot": ["Kristallikaivaja"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kristallikaivaja",
+  "numero": "#235",
+  "tyyppi": "Bug & Ground",
+  "tieteellinenNimi": "Vermis fossor crystallus",
+  "tieto": "Sen vahva kristallipää toimii kuin pora, jolla se löytää uusia malmiesiintymiä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kidemato",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Lasikonna",
+  "numero": "#236",
+  "tyyppi": "Water & Rock",
+  "tieteellinenNimi": "Rana vitrea",
+  "tieto": "Sen iho on osittain läpinäkyvä ja sen selässä kasvaa lasimaisia kiteitä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kidekonna"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidekonna",
+  "numero": "#237",
+  "tyyppi": "Water & Rock",
+  "tieteellinenNimi": "Rana vitrea gemmata",
+  "tieto": "Sen kristalliselkä kestää hyvin iskuja ja toimii samalla vesivarastona.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Lasikonna",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Vuorikide",
+  "numero": "#238",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Mons crystallus",
+  "tieto": "Se sulautuu helposti kristallikallioihin ja näyttää kaukaa pieneltä vuorenpalalta.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidekarhu",
+  "numero": "#239",
+  "tyyppi": "Ice & Rock",
+  "tieteellinenNimi": "Ursus glaciemma",
+  "tieto": "Sen turkkiin tarttuu jatkuvasti jäisiä kristalleja, jotka suojaavat sitä kylmältä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Jääkidekarhu"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Jääkidekarhu",
+  "numero": "#240",
+  "tyyppi": "Ice & Rock",
+  "tieteellinenNimi": "Ursus glaciemma magnus",
+  "tieto": "Sen hartioille kasvavat suuret jääkiteet, joiden avulla se voi jäähdyttää ympäröivää ilmaa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kidekarhu",
+  "kehitysmuodot": ["Mega-Jääkidekarhu"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kimmelsammal",
+  "numero": "#241",
+  "tyyppi": "Grass & Rock",
+  "tieteellinenNimi": "Bryum micans",
+  "tieto": "Sen vihreä pinta kasvaa kristallien päällä ja hohtaa hämärässä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kidekasvu"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidekasvu",
+  "numero": "#242",
+  "tyyppi": "Grass & Rock",
+  "tieteellinenNimi": "Bryum gemmatus",
+  "tieto": "Sen ympärille kasvaa pieniä kristallipylväitä, joiden väleissä kasvaa sammalta.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kimmelsammal",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Sädekuori",
+  "numero": "#243",
+  "tyyppi": "Rock & Fairy",
+  "tieteellinenNimi": "Testa radiata",
+  "tieto": "Sen kuoren keskellä oleva kristalli säteilee lämpöä ympärilleen.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidehiiri",
+  "numero": "#244",
+  "tyyppi": "Normal & Rock",
+  "tieteellinenNimi": "Mus gemmatus",
+  "tieto": "Se kerää pieniä kristallinsiruja pesäänsä ja käyttää niitä pesän seinien koristeluun.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Kidejyrsijä"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kidejyrsijä",
+  "numero": "#245",
+  "tyyppi": "Normal & Rock",
+  "tieteellinenNimi": "Rodentia gemmata",
+  "tieto": "Sen hampaat ovat kovettuneet kristallimaisiksi ja se pystyy nakertamaan mineraaleja.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kidehiiri",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Ametistikoi",
+  "numero": "#246",
+  "tyyppi": "Bug & Psychic",
+  "tieteellinenNimi": "Tineola amethysta",
+  "tieto": "Sen siipien keskellä oleva ametisti alkaa hehkua, kun se aistii toisten olioiden ajatuksia.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Ametistiyökkönen"],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Ametistiyökkönen",
+  "numero": "#247",
+  "tyyppi": "Bug & Psychic",
+  "tieteellinenNimi": "Noctua amethystina",
+  "tieto": "Sen siivet muodostavat violetin hohteen, joka auttaa sitä suunnistamaan luolissa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Ametistikoi",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Astraaliprisma",
+  "numero": "#248",
+  "tyyppi": "Psychic & Fairy",
+  "tieteellinenNimi": "Prisma astrale",
+  "tieto": "Jalokiviylängön korkeimmalla huipulla leijuva geometrinen jalokiviolento. Se kanavoi suoraan tähtien ja kosmoksen energiaa, ja pystyy muuttamaan todellisuutta ympärillään.",
+  "harvinaisuus": "Legendaarinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kvartsisarvi",
+  "numero": "#249",
+  "tyyppi": "Rock & Dragon",
+  "tieteellinenNimi": "Draco quartzum",
+  "tieto": "Jättimäinen, kristallikerroksen peittämä lohikäärme, joka vartioi ylängön muinaisia luolastoja. Sen karjaisu saa kristallit resonoimaan ja murtamaan hyökkääjien mielet.",
+  "harvinaisuus": "Legendaarinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+{
+  "nimi": "Kimalleloitsu",
+  "numero": "#250",
+  "tyyppi": "Fairy & Psychic",
+  "tieteellinenNimi": "Incantatio splendida",
+  "tieto": "Tarujen mukaan tämä Olio syntyi puhtaasta toiveesta. Se leijuu sateenkaaren väreissä hohtavassa sumussa ja suojelee Jalokiviylängön herkkää tasapainoa pahalta energialta.",
+  "harvinaisuus": "Legendaarinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Jalokiviylänkö"
+},
+  {
+    "nimi": "Sadepilli",
+    "numero": "#251",
+    "tyyppi": "Water",
+    "tieteellinenNimi": "Pluvia canorus",
+    "tieto": "Myrskyrannikon pieni vesistarteri, joka kerää sadepisaroita selässään oleviin putkimaisiin ulokkeisiin. Kun se on iloinen, se puhaltaa niistä heleän melodian, joka kuuluu kauas meren yllä.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Myrskisävel"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Myrskisävel",
+    "numero": "#252",
+    "tyyppi": "Water & Electric",
+    "tieteellinenNimi": "Tempestus sonorus",
+    "tieto": "Sadepillistä kehittynyt Olio, joka käyttää ukkosmyrskyjen sähköä vahvistaakseen ääntään. Sen laulun kerrotaan muuttavan lähestyvän myrskyn suunnan.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Sadepilli",
+    "kehitysmuodot": ["Sadeorkesteri"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Sadeorkesteri",
+    "numero": "#253",
+    "tyyppi": "Water & Electric",
+    "tieteellinenNimi": "Tempestus symphonia",
+    "tieto": "Sen valtavat kidukset ja putkimaiset evät muodostavat kokonaisen luonnollisen soittimen. Sadeorkesteri voi yhdistää sateen, tuulen ja salamat yhdeksi voimakkaaksi myrskysinfoniaksi.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Myrskisävel",
+    "kehitysmuodot": ["Mega-Sadeorkesteri"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Rantapentu",
+    "numero": "#254",
+    "tyyppi": "Fire",
+    "tieteellinenNimi": "Canis igniripa",
+    "tieto": "Leikkisä rannikko-Olio, jonka turkki säilyy lämpimänä jova rankkasateessa. Se rakastaa juosta märällä hiekalla ja jättää jälkeensä pieniä höyrypilviä.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Roihuranta"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Roihuranta",
+    "numero": "#255",
+    "tyyppi": "Fire & Rock",
+    "tieteellinenNimi": "Canis volcanoripa",
+    "tieto": "Rantapentu kasvattaa kehityksensä myötä kivimäisen panssarin, joka varastoi lämpöä. Se vartioi kalliorantoja ja nukkuu mielellään auringon lämmittämillä rantakivillä.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Rantapentu",
+    "kehitysmuodot": ["Myrskykoira"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Myrskykoira",
+    "numero": "#256",
+    "tyyppi": "Fire & Electric",
+    "tieteellinenNimi": "Canis tempestivorus",
+    "tieto": "Myrskykoira kulkee rantakallioilla ukkosrintamien mukana. Sen harja syttyy sinertävään liekkiin salaman iskiessä lähelle, ja se ulvoo juuri ennen kuin ukkonen saavuttaa rannikon.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Roihuranta",
+    "kehitysmuodot": ["Mega-Myrskykoira"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Tuuliviima",
+    "numero": "#257",
+    "tyyppi": "Grass",
+    "tieteellinenNimi": "Ventofolia marina",
+    "tieto": "Pieni kasviolio, jonka lehdet kasvavat tuulen suuntaisesti. Se voi levittää siemeniään kokonaisen rannikon yli yhden voimakkaan merituulen avulla.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Merituuli"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Merituuli",
+    "numero": "#258",
+    "tyyppi": "Grass & Flying",
+    "tieteellinenNimi": "Ventofolia alaris",
+    "tieto": "Tuuliviiman kehittynyt muoto, jonka lehdet muistuttavat siipiä. Se levittää kukkivien rannikkokasvien siitepölyä ja pitää Myrskyrannikon kasvillisuuden elinvoimaisena.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Tuuliviima",
+    "kehitysmuodot": ["Myrskyhavu"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Myrskyhavu",
+    "numero": "#259",
+    "tyyppi": "Grass & Flying",
+    "tieteellinenNimi": "Ventofolia tempestus",
+    "tieto": "Myrskyhavu kasvattaa oksistaan suuret purjemaiset lehdet, joiden avulla se hallitsee tuulia ympärillään. Vanhojen tarinoiden mukaan kokonaiset kylät ovat selvinneet hirmumyrskyistä sen suojaavan tuuliseinän ansiosta.",
+    "harvinaisuus": "Harvinainen",
+    "esikehitys": "Merituuli",
+    "kehitysmuodot": ["Mega-Myrskyhavu"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Usvahaukka",
+    "numero": "#260",
+    "tyyppi": "Flying & Water",
+    "tieteellinenNimi": "Nebulavulturis marinus",
+    "tieto": "Usvahaukka liitää Myrskyrannikon sumuisilla merialueilla lähes äänettömästi. Sen höyhenet keräävät ilmankosteutta, ja se pystyy näkemään saaliinsa paksunkin merisumun läpi.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Myrskyliitäjä"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Myrskyliitäjä",
+    "numero": "#261",
+    "tyyppi": "Flying & Water",
+    "tieteellinenNimi": "Nebulavulturis tempestus",
+    "tieto": "Myrskyliitäjä käyttää mereltä nousevia voimakkaita ilmavirtauksia lentääkseen pitkiä matkoja räpyttelemättä siipiään. Se ilmestyy usein ennen rajuilmaa ja katoaa pilvien sekaan ensimmäisten salamoiden syttyessä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": "Usvahaukka",
+    "kehitysmuodot": [],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+  {
+    "nimi": "Riuttahai",
+    "numero": "#262",
+    "tyyppi": "Water & Dark",
+    "tieteellinenNimi": "Carcharodon umbraripa",
+    "tieto": "Riuttahai vaanii Myrskyrannikon koralliriuttojen varjoissa. Sen tumma iho sulautuu syvään veteen, ja se pystyy havaitsemaan saaliinsa pienimmänkin liikkeen veden värähtelyistä.",
+    "harvinaisuus": "Tavallinen",
+    "esikehitys": null,
+    "kehitysmuodot": ["Mega-Riuttahai"],
+    "kuva": "empty.png",
+    "alue": "Myrskyrannikko"
+  },
+{
+  "nimi": "Kuplapyrstö",
+  "numero": "#263",
+  "tyyppi": "Water",
+  "tieteellinenNimi": "Cauda bullaris",
+  "tieto": "Kuplapyrstö on pieni ketunpoikainen Olio, joka leikkii rantavesissä ja jättää jälkeensä kuplavanoja.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Aaltokettu"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Aaltokettu",
+  "numero": "#264",
+  "tyyppi": "Water & Fairy",
+  "tieteellinenNimi": "Vulpes undina",
+  "tieto": "Aaltokettu liikkuu sulavasti tyrskyjen mukana ja sen häntä hohtaa sinertävää valoa iltaisin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Kuplapyrstö",
+  "kehitysmuodot": ["Tyrskykettu"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Tyrskykettu",
+  "numero": "#265",
+  "tyyppi": "Water & Fairy",
+  "tieteellinenNimi": "Vulpes procella",
+  "tieto": "Tyrskykettu hallitsee rannikon voimakkaita aaltoja ja suojelee pienempiä meriolioita myrskyiltä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Aaltokettu",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Korallinysä",
+  "numero": "#266",
+  "tyyppi": "Rock",
+  "tieteellinenNimi": "Corallus insidiae",
+  "tieto": "Korallinysä on pieni rantakallioilla viihtyvä Olio, joka naamioituu korallinpalasten sekaan odottamaan sopivaa hetkeä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Korallipiikki"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Korallipiikki",
+  "numero": "#267",
+  "tyyppi": "Rock & Water",
+  "tieteellinenNimi": "Corallus spina",
+  "tieto": "Korallipiikki kasvattaa kehoonsa kovia korallipiikkejä, joiden avulla se puolustautuu voimakkaita merivirtoja vastaan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Korallinysä",
+  "kehitysmuodot": ["Korallijätti"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Korallijätti",
+  "numero": "#268",
+  "tyyppi": "Rock & Water",
+  "tieteellinenNimi": "Corallus titanus",
+  "tieto": "Korallijätti on valtava merirannan Olio, jonka selkään kasvaa pieni koralliriutta ja jonka askelmat tärisyttävät rantakallioita.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Korallipiikki",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Tuulisiipi",
+  "numero": "#269",
+  "tyyppi": "Flying",
+  "tieteellinenNimi": "Ventoptera marina",
+  "tieto": "Tuulisiipi liitää Myrskyrannikon yllä ja osaa hyödyntää pienimpiäkin mereltä tulevia tuulenpuuskia.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Myrskysiipi"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Myrskysiipi",
+  "numero": "#270",
+  "tyyppi": "Flying & Electric",
+  "tieteellinenNimi": "Tempestavis fulgur",
+  "tieto": "Myrskysiipi kerää siipiinsä sähkövarausta lentäessään ukkospilvien läheisyydessä ja vapauttaa sen salaman tavoin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Tuulisiipi",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Ukkosrausku",
+  "numero": "#271",
+  "tyyppi": "Electric & Water",
+  "tieteellinenNimi": "Raja fulgura",
+  "tieto": "Ukkosrausku ui myrskyisissä rannikkovesissä ja synnyttää ympärilleen pieniä sähköpurkauksia liikuttaessaan eviään.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Syvyyssilmä",
+  "numero": "#272",
+  "tyyppi": "Water & Psychic",
+  "tieteellinenNimi": "Oculus abyssus",
+  "tieto": "Syvyyssilmä pystyy näkemään samean meriveden läpi ja havaitsee kaukaisetkin liikkeet syvyyksissä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Lokinokka",
+  "numero": "#273",
+  "tyyppi": "Flying",
+  "tieteellinenNimi": "Larivorus ventus",
+  "tieto": "Lokinokka on utelias rannikko-Olio, joka seuraa kalastusaluksia ja nappaa ruokaa meren pinnalta.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Merilokki"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Merilokki",
+  "numero": "#274",
+  "tyyppi": "Flying & Water",
+  "tieteellinenNimi": "Larivorus pelagicus",
+  "tieto": "Merilokki lentää pitkiä matkoja meren yllä ja sukeltaa hetkeksi aaltojen alle saalistaessaan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Lokinokka",
+  "kehitysmuodot": ["Myrskylokki"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Myrskylokki",
+  "numero": "#275",
+  "tyyppi": "Flying & Electric",
+  "tieteellinenNimi": "Larivorus fulgoris",
+  "tieto": "Myrskylokki lentää ukkospilvien keskellä ja kerää siipiinsä sähkövarausta, jota se käyttää suunnistamiseen.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Merilokki",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Särkkähai",
+  "numero": "#276",
+  "tyyppi": "Dark",
+  "tieteellinenNimi": "Selachus scopulus",
+  "tieto": "Särkkähai vaanii Myrskyrannikon kallioiden ja hiekkasärkkien läheisyydessä odottaen sopivaa hetkeä syöksyä saaliinsa perään.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Riuttakeisari"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Riuttakeisari",
+  "numero": "#277",
+  "tyyppi": "Water & Dark",
+  "tieteellinenNimi": "Selachus imperator",
+  "tieto": "Riuttakeisari hallitsee rannikon vedenalaisia alueita ja ajaa tunkeilijat pois voimakkailla pyrstöniskuilla.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Särkkähai",
+  "kehitysmuodot": ["Mega-Riuttakeisari"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Levämato",
+  "numero": "#278",
+  "tyyppi": "Grass",
+  "tieteellinenNimi": "Alga serpens",
+  "tieto": "Levämato luikertelee rantakivien ja merilevän seassa ja käyttää pitkää vartaloaan piiloutumiseen.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Leväkäärme"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Leväkäärme",
+  "numero": "#279",
+  "tyyppi": "Grass & Water",
+  "tieteellinenNimi": "Alga serpentina",
+  "tieto": "Leväkäärme ui rantavesissä ja kasvattaa kehoonsa merilevää, jonka avulla se sulautuu ympäristöönsä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Levämato",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Sumutassu",
+  "numero": "#280",
+  "tyyppi": "Dark",
+  "tieteellinenNimi": "Nebulapoda obscura",
+  "tieto": "Sumutassu liikkuu hiljaa rannikon sumussa ja sen tummat tassut eivät jätä jälkiä märkään hiekkaan.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Usvajuoksija"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Usvajuoksija",
+  "numero": "#281",
+  "tyyppi": "Dark & Flying",
+  "tieteellinenNimi": "Nebulapoda volans",
+  "tieto": "Usvajuoksija pystyy liikkumaan nopeasti sumussa ja levittämään ympärilleen tumman usvan, joka vaikeuttaa sen seuraamista.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Sumutassu",
+  "kehitysmuodot": ["Usvavarjo"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Usvavarjo",
+  "numero": "#282",
+  "tyyppi": "Dark & Flying",
+  "tieteellinenNimi": "Nebulapoda umbra",
+  "tieto": "Usvavarjo liitää lähes äänettömästi rannikon yllä ja katoaa helposti paksuun merisumuun.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Usvajuoksija",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Ukkosvalas",
+  "numero": "#283",
+  "tyyppi": "Water & Electric",
+  "tieteellinenNimi": "Balaena fulguris",
+  "tieto": "Ukkosvalas ui kaukana rannikon myrskyisillä vesillä ja sen selästä voi nähdä sähköisiä välähdyksiä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Sähkösimpukka",
+  "numero": "#284",
+  "tyyppi": "Electric",
+  "tieteellinenNimi": "Concha fulguris",
+  "tieto": "Sähkösimpukka elää Myrskyrannikon kivikoissa ja varastoi sähköä kuorensa sisään ukkosmyrskyjen aikana.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Salamakuori"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Salamakuori",
+  "numero": "#285",
+  "tyyppi": "Electric & Water",
+  "tieteellinenNimi": "Concha fulminis",
+  "tieto": "Salamakuori pystyy johtamaan merivedessä kulkevaa sähköä kuorensa läpi ja käyttämään sitä puolustautumiseen.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Sähkösimpukka",
+  "kehitysmuodot": ["Ukkotursas"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Ukkotursas",
+  "numero": "#286",
+  "tyyppi": "Electric & Water",
+  "tieteellinenNimi": "Octopus tonitrus",
+  "tieto": "Ukkotursas vapauttaa lonkeroistaan voimakkaita sähköpurkauksia, jotka näkyvät veden alla kirkkaina välähdyksinä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Salamakuori",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Tyrskykruunu",
+  "numero": "#287",
+  "tyyppi": "Water & Fairy",
+  "tieteellinenNimi": "Corona fluctus",
+  "tieto": "Tyrskykruunu koristaa päätään vaahtomaisella vesikehällä ja ilmestyy usein kallioille juuri ennen suurta aaltoa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Merirapu",
+  "numero": "#288",
+  "tyyppi": "Water",
+  "tieteellinenNimi": "Cancer marinus",
+  "tieto": "Merirapu viihtyy Myrskyrannikon matalissa vesissä ja kaivaa nopeasti piilopaikkoja hiekan ja kivien väliin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Hyökyrapu"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Hyökyrapu",
+  "numero": "#289",
+  "tyyppi": "Water & Fighting",
+  "tieteellinenNimi": "Cancer impetus",
+  "tieto": "Hyökyrapu käyttää valtavia saksiaan taistellessaan ja hyödyntää aaltojen voimaa nopeisiin syöksyihin.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Merirapu",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Myrskylinna",
+  "numero": "#290",
+  "tyyppi": "Rock & Flying",
+  "tieteellinenNimi": "Castellavus procella",
+  "tieto": "Myrskylinna rakentaa kivistä pieniä pesimäkumpuja korkeille rantajyrkänteille ja tarkkailee sieltä merellä liikkuvia pilviä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Mega-Myrskylinna"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Myrskykotka",
+  "numero": "#291",
+  "tyyppi": "Flying & Electric",
+  "tieteellinenNimi": "Aquila tempestas",
+  "tieto": "Myrskykotka liitää Myrskyrannikon yllä ja kerää siipiinsä sähkövarausta ukkospilvien läheisyydessä.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Salamariutta",
+  "numero": "#292",
+  "tyyppi": "Rock & Electric",
+  "tieteellinenNimi": "Reefus fulgur",
+  "tieto": "Salamariutta on elävä kivimäinen Olio, jonka pinnalle kertyy sähköä jokaisen ukkosmyrskyn aikana.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Pisarakala",
+  "numero": "#293",
+  "tyyppi": "Water",
+  "tieteellinenNimi": "Piscis gutta",
+  "tieto": "Pisarakala on pieni rannikkovesien Olio, joka pystyy säilyttämään kehonsa ympärillä pieniä vesipisaroita.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Myrskykala"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Myrskykala",
+  "numero": "#294",
+  "tyyppi": "Water & Electric",
+  "tieteellinenNimi": "Piscis tempestus",
+  "tieto": "Myrskykala ui ukkosmyrskyjen aikana lähellä vedenpintaa ja vapauttaa ympärilleen pieniä sähköpurkauksia.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Pisarakala",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Meripeikko",
+  "numero": "#295",
+  "tyyppi": "Water & Dark",
+  "tieteellinenNimi": "Trollus marinus",
+  "tieto": "Meripeikko piileskelee rantaluolissa ja tulee esiin vasta hämärän laskeuduttua.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Tuulikeihäs",
+  "numero": "#296",
+  "tyyppi": "Flying & Fighting",
+  "tieteellinenNimi": "Hasta ventorum",
+  "tieto": "Tuulikeihäs käyttää teräviä siipiään ja nopeita syöksyjään liikkumiseen voimakkaissa rannikkotuulissa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": null,
+  "kehitysmuodot": ["Myrskypiikki"],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+  "nimi": "Myrskypiikki",
+  "numero": "#297",
+  "tyyppi": "Flying & Fighting",
+  "tieteellinenNimi": "Hasta tempestas",
+  "tieto": "Myrskypiikki syöksyy myrskytuulten mukana ja käyttää teräviä siipiään sekä piikkimäistä nokkaansa taistelussa.",
+  "harvinaisuus": "Tavallinen",
+  "esikehitys": "Tuulikeihäs",
+  "kehitysmuodot": [],
+  "kuva": "empty.png",
+  "alue": "Myrskyrannikko"
+},
+{
+    nimi: "Myrskyvaltias",
+    numero: "#298",
+    tyyppi: "Electric & Flying",
+    tieteellinenNimi: "Tempestus rex",
+    tieto: "Myrskyrannikon taivaita hallitseva legendaarinen olio. Sen valtavat siivet muodostuvat ukkospilvistä, ja jokainen siivenisku synnyttää uusia salamoita. Tarinoiden mukaan kaikki rannikon myrskyt ovat lähtöisin sen heräämisestä.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: "",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Myrskyrannikko"
+},
+{
+    nimi: "Syväriuttakuningas",
+    numero: "#299",
+    tyyppi: "Water & Dragon",
+    tieteellinenNimi: "Draconis abyssoripa",
+    tieto: "Valtava merikäärmemäinen legendaolio, joka nukkuu syvällä Myrskyrannikon riuttojen alla. Sen liikkeet synnyttävät jättimäisiä vuorovesiä, ja sen suomuissa loistavat muinaiset merikristallit.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: "",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Myrskyrannikko"
+},
+{
+    nimi: "Aallonkeisari",
+    numero: "#300",
+    tyyppi: "Water & Electric",
+    tieteellinenNimi: "Imperator fulguraqua",
+    tieto: "Myrskyrannikon vanhin tunnettu legendaolio. Sen kruunumaiset evät keräävät ukkosenergiaa valtamerestä, ja se pystyy kutsumaan esiin jättimäisiä sähköisiä hyökyaaltoja. Merimiehet pitävät sen ilmestymistä sekä siunauksena että varoituksena.",
+    harvinaisuus: "Legendaarinen",
+    esikehitys: "",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Myrskyrannikko"
+},
+{
+    nimi: "Mega-Mössö",
+    numero: "#301",
+    tyyppi: "Ground & Water",
+    tieteellinenNimi: "Gigas glebula liquida",
+	tieto: "Mega-Mössö on ensimmäinen koskaan havaittu mega-muoto. Kehityslaakson energia sai sen kehon muuttumaan valtavaksi ja sen voimat moninkertaistuivat.",
+	harvinaisuus:"Eeppinen",
+    esikehitys: "Mössö",
+    kehitysmuodot: [],
+    kuva: "Megamosso.png",
+	alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Sipuliruhtinas",
+    numero: "#302",
+    tyyppi: "Grass & Poison",
+    tieteellinenNimi: "Gigas allium princeps",
+    tieto: "Mega-Sipuliruhtinaan myrkyllinen tuoksupilvi on voimistunut valtavasti. Sen ympärille muodostuva pilvi voi lamaannuttaa kokonaisen ryhmän Olioita hetkessä.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Sipuliruhtinas",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Pyromanaaja",
+    numero: "#303",
+    tyyppi: "Fire & Ghost",
+    tieteellinenNimi: "Gigas exorcista incendiorum",
+    tieto: "Mega-Pyromanaajan liekit palavat niin kuumina, että ne voivat muuttaa kokonaisia rovioita valtaviksi tulipatsaiksi.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Pyromanaaja",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Geysiirkuningas",
+    numero: "#304",
+    tyyppi: "Water & Rock",
+    tieteellinenNimi: "Gigas carcinus geyserus",
+    tieto: "Mega-Geysiirkuningas pystyy synnyttämään valtavia geysirpurkauksia. Sen selässä oleva vesivarasto voi sisältää kokonaisen järven verran vettä.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Geysiirkuningas",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Räkäruhtinas",
+    numero: "#305",
+    tyyppi: "Poison & Dark",
+    tieteellinenNimi: "Gigas mucosa horribilis",
+    tieto: "Mega-Räkäruhtinaan myrkyllinen hengitys muodostaa ympärilleen valtavan limaisen sumun. Sen lähellä oleminen vaikeuttaa hengittämistä ja liikkumista.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Räkäruhtinas",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Torkkuli",
+    numero: "#306",
+    tyyppi: "Grass & Fairy",
+    tieteellinenNimi: "Gigas dormitus maximus",
+    tieto: "Mega-Torkkuli kasvaa valtavaksi ja nukkuu niin syvästi, että sen herättäminen on lähes mahdotonta.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Torkkuli",
+    kehitysmuodot: [],
+    kuva: "Megatorkkuli.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Havuhirvi",
+    numero: "#307",
+    tyyppi: "Grass & Dragon",
+    tieteellinenNimi: "Gigas pinusculus",
+    tieto: "Mega-Havuhirven sarvet kasvavat valtaviksi ikivanhoiksi oksiksi. Sen ympärillä oleva maa muuttuu hetkessä tiheäksi metsäksi.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Havuhirvi",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Rojuhirvi",
+    numero: "#308",
+    tyyppi: "Fire & Dragon",
+    tieteellinenNimi: "Gigas ignisculus",
+    tieto: "Mega-Rojuhirven sisällä virtaa lähes pysäyttämätön kuumuus. Sen karjaisu voi saada kokonaiset vuoret tärisemään ja sulattaa kiveä.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Rojuhirvi",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Lirskijä",
+    numero: "#309",
+    tyyppi: "Water & Ice",
+    tieteellinenNimi: "Gigas aquatilis",
+    tieto: "Mega-Lirskijä pystyy hallitsemaan kokonaisia järviä. Sen ympärille muodostuva kylmä sumu jäädyttää kaiken, mikä joutuu liian lähelle.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Lirskijä",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Lohikäärmeruhtinas",
+    numero: "#310",
+    tyyppi: "Dragon & Ice",
+    tieteellinenNimi: "Gigas draconisculus glacialis",
+    tieto: "Mega-Lohikäärmeruhtinaan keho kasvaa valtavaksi ja sen siivet peittyvät ikuisella jäällä. Sen lentäessä taivaalle muodostuu kylmä myrskyrintama, joka voi peittää kokonaisen vuoriston lumeen.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Lohikäärmeruhtinas",
+    kehitysmuodot: [],
+    kuva: "Megalohikaarmeruhtinas.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Jäärevontuli",
+    numero: "#311",
+    tyyppi: "Ice & Fairy",
+    tieteellinenNimi: "Gigas nivivulpes aurora",
+    tieto: "Mega-Jäärevontulen turkki loistaa voimakkaasti revontulien väreissä ja sen ympärille syntyy jatkuvasti kimaltavaa jääsumua. Sen hännät voivat levittää rauhoittavaa valoa jopa kokonaisen laakson ylle.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Jäärevontuli",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Jääkuusi",
+    numero: "#312",
+    tyyppi: "Ice & Grass",
+    tieteellinenNimi: "Gigas cryopinulus arboris",
+    tieto: "Mega-Jääkuusi kasvaa valtavan kokoiseksi muinaiseksi jääpuuksi. Sen oksilla muodostuvat jääkiteet eivät koskaan sula, ja sen juuret pystyvät levittämään ikiroudan laajalle alueelle.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Jääkuusi",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Prismakettu",
+    numero: "#313",
+    tyyppi: "Rock & Psychic",
+    tieteellinenNimi: "Vulpes prismaticus magnus",
+    tieto: "Mega-Prismaketun sateenkaaren värinen turkki säteilee niin kirkkaasti, että sen ympärille muodostuu jatkuvasti muuttuvia kristalli-illuusioita. Sen otsakristalli pystyy keskittämään valtavan määrän psyykkistä energiaa yhdeksi häikäisevän voimakkaaksi lasersäteeksi.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Prismakettu",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Psykoperho",
+    numero: "#314",
+    tyyppi: "Psychic & Fairy",
+    tieteellinenNimi: "Papilio cosmicus magnifica",
+    tieto: "Mega-Psykoperhon siivet näyttävät kokonaiselta galaksilta, jossa tähdet liikkuvat jatkuvasti. Sen levittämä kosminen taikapöly voi hetkellisesti muuttaa painovoiman suuntaa laajoilla alueilla ja hämmentää vastustajia täydellisesti.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Psykoperho",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Kristallikuningatar",
+    numero: "#315",
+    tyyppi: "Fairy & Rock",
+    tieteellinenNimi: "Regina crystallina imperatrix",
+    tieto: "Mega-Kristallikuningattaren ympärillä leijuu valtava kruununmuotoinen kristallikehä. Sen suojaava kristallikenttä on niin voimakas, että se voi heijastaa takaisin lähes minkä tahansa erikoishyökkäyksen ja vahvistaa samalla omia voimiaan.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Kristallikuningatar",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Sadeorkesteri",
+    numero: "#316",
+    tyyppi: "Water & Electric",
+    tieteellinenNimi: "Tempestus symphonia magnus",
+    tieto: "Mega-Sadeorkesterin kidukset ja evät muodostavat valtavan luonnollisen konserttisalin. Se kykenee johtamaan kokonaisia myrskyjä kuin orkesteria ja yhdistämään sateen, tuulen sekä salamat yhdeksi tuhoisaksi sinfoniaksi.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Sadeorkesteri",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Myrskykoira",
+    numero: "#317",
+    tyyppi: "Fire & Electric",
+    tieteellinenNimi: "Canis tempestivorus magnus",
+    tieto: "Mega-Myrskykoiran sinertävä liekkiharja muuttuu valtavaksi sähköiseksi tulimyrskyksi. Sen ulvonta kutsuu taivaalle salamapilviä, jotka seuraavat sitä uskollisesti kaikkialle.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Myrskykoira",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Myrskyhavu",
+    numero: "#318",
+    tyyppi: "Grass & Flying",
+    tieteellinenNimi: "Ventofolia tempestus magnifica",
+    tieto: "Mega-Myrskyhavun purjemaiset lehdet kasvavat valtaviin mittoihin ja pyörivät jatkuvasti sen ympärillä. Se pystyy luomaan kokonaisia tuulimuurien verkostoja, jotka suojaavat laajoja alueita myrskyiltä.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Myrskyhavu",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Riuttahai",
+    numero: "#319",
+    tyyppi: "Water & Dark",
+    tieteellinenNimi: "Carcharodon umbraripa magnus",
+    tieto: "Mega-Riuttahain tumma iho muuttuu lähes näkymättömäksi syvissä vesissä. Se voi havaita pienimmätkin liikkeet kilometrien päästä ja iskeä saaliiseensa salamannopeasti varjoista.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Riuttahai",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Kalmistokeisari",
+    numero: "#320",
+    tyyppi: "Ghost & Dark",
+    tieteellinenNimi: "Phasma imperator supremus",
+    tieto: "Mega-Kalmistokeisarin kruunu säteilee valtavaa purppuraa energiaa, joka täyttää ympäristön aavemaisella voimalla. Sen pelkkä läsnäolo saa monet oliot jähmettymään kauhusta.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Kalmistokeisari",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Tuonensusi",
+    numero: "#321",
+    tyyppi: "Dark & Ghost",
+    tieteellinenNimi: "Canis infernalis magnus",
+    tieto: "Mega-Tuonensuden siniset liekit leviävät koko sen kehon ympärille. Sen ulvonta kantautuu kilometrien päähän ja kutsuu esiin aavemaisia varjosusia taistelemaan rinnalleen.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Tuonensusi",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Toksiinijärkäle",
+    numero: "#322",
+    tyyppi: "Poison & Ground",
+    tieteellinenNimi: "Limo gigantus toxicus",
+    tieto: "Mega-Toksiinijärkäleen valtava ruumis vuotaa jatkuvasti syövyttäviä myrkkyjä. Sen liikkeet muuttavat maaperän hetkessä myrkylliseksi suoksi, jossa vain harvat oliot voivat selviytyä.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Toksiinijärkäle",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Kelppikuningas",
+    numero: "#323",
+    tyyppi: "Grass & Water",
+    tieteellinenNimi: "Alga majestas magnifica",
+    tieto: "Mega-Kelppikuninkaan merileväkruunu kasvaa valtavaksi vedenalaiseksi valtaistuimeksi. Se hallitsee voimakkaita vesipyörteitä, jotka voivat nostaa kokonaisia laivoja ilmaan.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Kelppikuningas",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Makarovio",
+    numero: "#324",
+    tyyppi: "Fire & Ground",
+    tieteellinenNimi: "Aper vulcanicus magnus",
+    tieto: "Mega-Makarovion hampaat hehkuvat kirkkaammin kuin sula laava. Sen sorkkien iskut voivat synnyttää laavavirtoja ja pieniä tulivuorenpurkauksia hetkessä.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Makarovio",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Geysiirijätti",
+    numero: "#325",
+    tyyppi: "Water & Fire",
+    tieteellinenNimi: "Cancer gigantus magnifica",
+    tieto: "Mega-Geysiirijätin selässä oleva geysiiri purkautuu jatkuvasti höyryä ja kiehuvaa vettä. Se voi peittää kokonaisen taistelukentän polttavaan sumuun ja laukaista valtavia vesipurkauksia.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Geysiirijätti",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Koskenruhtinas",
+    numero: "#326",
+    tyyppi: "Water & Fighting",
+    tieteellinenNimi: "Fluvius imperatoris magnus",
+    tieto: "Mega-Koskenruhtinaan ympärille muodostuu valtava vesikehä, joka pyörii sen liikkeiden mukana. Se pystyy muuttamaan kosken kaltaisen virtauksen murskaavaksi hyökkäykseksi ja taistelemaan yhtä aikaa useita vastustajia vastaan.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Koskenruhtinas",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Kalliosyöksy",
+    numero: "#327",
+    tyyppi: "Rock & Flying",
+    tieteellinenNimi: "Petra volucris titanica",
+    tieto: "Mega-Kalliosyöksyn siivet ovat kasvaneet niin voimakkaiksi, että se voi syöksyä alas pilvien yläpuolelta ja rikkoa kallioita pelkällä törmäyksellään. Sen ympärillä pyörivä kivimurska toimii samalla suojana ja aseena.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Kalliosyöksy",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Kristallikaiku",
+    numero: "#328",
+    tyyppi: "Psychic & Rock",
+    tieteellinenNimi: "Crystallus resonantia maxima",
+    tieto: "Mega-Kristallikaiku kykenee keskittämään psyykkisen voimansa kehonsa kristalleihin. Jokainen kristalli värähtelee eri taajuudella, jolloin se voi lähettää vastustajan liikkeet sekoittavia kaikuja ja voimakkaita kivienergiapulsseja.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Kristallikaiku",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Jääkidekarhu",
+    numero: "#329",
+    tyyppi: "Ice & Steel",
+    tieteellinenNimi: "Ursus glacialis crystallinus",
+    tieto: "Mega-Jääkidekarhun turkki muuttuu teräksenlujiksi jääkidelevyiksi. Sen jokainen askel jäädyttää maan hetkeksi, ja sen valtavat kidekynnet pystyvät halkaisemaan paksuimmankin jään ja kiven.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Jääkidekarhu",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Riuttakeisari",
+    numero: "#330",
+    tyyppi: "Water & Psychic",
+    tieteellinenNimi: "Rex marinus mentis",
+    tieto: "Mega-Riuttakeisari hallitsee ympärillään olevaa merta lähes ajatuksen voimalla. Se pystyy liikuttamaan kokonaisia vesimassoja ja luomaan psyykkisiä aaltoja, jotka voivat pysäyttää suurten meriolioiden liikkeen.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Riuttakeisari",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+},
+{
+    nimi: "Mega-Myrskylinna",
+    numero: "#331",
+    tyyppi: "Rock & Electric",
+    tieteellinenNimi: "Arx tempestatis fulguris",
+    tieto: "Mega-Myrskylinnan kivinen ruumis muuttuu valtavaksi ukkoslinnoitukseksi. Sen siipien ympärille kerääntyvät sähkövaraukset synnyttävät salamoita, ja sen lentäessä taivaalle muodostuu voimakas myrskyrintama.",
+    harvinaisuus: "Eeppinen",
+    esikehitys: "Myrskylinna",
+    kehitysmuodot: [],
+    kuva: "empty.png",
+    alue: "Kehityslaakso"
+}
+];
+
+const pokedex = document.getElementById("pokedex");
+
+function toggleSivupalkki(event) {
+    const sivupalkki = document.getElementById("sivupalkki");
+    const nappi = document.querySelector(".valikko-nappi");
+    
+    // Vaihtaa luokan 'auki' päälle tai pois
+    sivupalkki.classList.toggle("auki");
+    
+    // Jos sivupalkki on auki, muutetaan nappi ruksiksi ja punaiseksi
+    if (sivupalkki.classList.contains("auki")) {
+        nappi.innerHTML = "✕";
+        nappi.classList.add("nappi-auki");
+    } else {
+        nappi.innerHTML = "☰";
+        nappi.classList.remove("nappi-auki");
+    }
+}
+
+// Skrollataan halutun alueen otsikon kohdalle
+function skrollaaAlueeseen(alueId) {
+    const kohde = document.getElementById(alueId);
+    if (kohde) {
+        kohde.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    suljeSivupalkki();
+}
+
+function arvoRandomPokemon() {
+    const validitPokemonit = pokemonit.filter(pokemon =>
+        pokemon.nimi && pokemon.nimi.trim() !== ""
+    );
+
+    if (validitPokemonit.length === 0) return;
+
+    const satunnainen = validitPokemonit[
+        Math.floor(Math.random() * validitPokemonit.length)
+    ];
+
+    avaaPokemon(pokemonit.indexOf(satunnainen));
+}
+
+// Modalin avaaminen ja tietojen täyttäminen
+function avaaPokemon(id) {
+    if (id === -1) return; 
+    const pokemon = pokemonit[id];
+
+    document.getElementById("modalKuva").src = pokemon.kuva;
+    document.getElementById("modalNimi").textContent = pokemon.nimi;
+    document.getElementById("modalNumero").textContent = pokemon.numero;
+    document.getElementById("modalTyyppi").textContent = pokemon.tyyppi;
+    document.getElementById("modalTieteellinen").textContent = pokemon.tieteellinenNimi || "Ei tieteellistä nimeä";
+	document.getElementById("modalTieto").textContent =
+    pokemon.tieto || "Tietoa ei ole saatavilla.";
+
+document.getElementById("modalHarvinaisuus").innerHTML =
+    `<span class="harvinaisuus">${pokemon.harvinaisuus || "Tuntematon"}</span>`;
+
+    // Esikehityksen käsittely
+    const esikehitysDiv = document.getElementById("modalEsikehitys");
+    esikehitysDiv.innerHTML = "";
+    
+    if (!pokemon.esikehitys) {
+        esikehitysDiv.textContent = "Ei esikehitystä";
+    } else {
+        const esiId = pokemonit.findIndex(p => p.nimi === pokemon.esikehitys);
+        const nappi = document.createElement("span");
+        nappi.className = "esikehitys";
+        nappi.textContent = pokemon.esikehitys;
+        nappi.onclick = () => avaaPokemon(esiId);
+        esikehitysDiv.appendChild(nappi);
+    }
+
+    // Kehitysmuotojen käsittely
+    const kehitysDiv = document.getElementById("modalKehitykset");
+    kehitysDiv.innerHTML = "";
+
+    if (!pokemon.kehitysmuodot || pokemon.kehitysmuodot.length === 0) {
+        kehitysDiv.textContent = "Ei jatkokehitysmuotoja";
+    } else {
+        pokemon.kehitysmuodot.forEach(nimi => {
+            const kehitysPokemon = pokemonit.findIndex(p => p.nimi === nimi);
+            const nappi = document.createElement("span");
+            nappi.className = "kehitys";
+            nappi.textContent = nimi;
+            nappi.onclick = () => avaaPokemon(kehitysPokemon);
+            kehitysDiv.appendChild(nappi);
+        });
+    }
+
+    document.getElementById("modal").style.display = "flex";
+}
+
+function suljeModal() {
+    document.getElementById("modal").style.display = "none";
+}
+
+// Klikkaukset ikkunan ulkopuolella (sulkee modalin tai sivupalkin)
+window.onclick = function(event) {
+    const modal = document.getElementById("modal");
+    const sivupalkki = document.getElementById("sivupalkki");
+
+    if (event.target === modal) {
+        suljeModal();
+    }
+    if (!sivupalkki.contains(event.target)) {
+        suljeSivupalkki();
+    }
+};
+
+// Luodaan sivupalkkiin lista alueista automaattisesti datan pohjalta
+function paivitaAluevalikko() {
+    const alueLista = document.getElementById("alueLista");
+    alueLista.innerHTML = "";
+    
+    const alueet = [...new Set(pokemonit.map(p => p.alue).filter(Boolean))];
+    
+    alueet.forEach(alue => {
+        const li = document.createElement("li");
+        li.textContent = alue;
+        li.onclick = () => skrollaaAlueeseen("alue-" + alue);
+        alueLista.appendChild(li);
+    });
+}
+
+// Olioiden ja alueotsikoiden tulostus näytölle
+function naytaPokemonit(lista) {
+    pokedex.innerHTML = "";
+    const validitOliot = lista.filter(p => p.nimi && p.nimi.trim() !== "");
+
+if (validitOliot.length === 0) {
+    pokedex.innerHTML = `
+        <div class="virhe-keskitys">
+            <p class="virhe-laatikko">Olioita ei löytynyt.</p>
+        </div>
+    `;
+    return;
+}
+
+    let nykyinenAlue = "";
+
+    validitOliot.forEach(pokemon => {
+        if (pokemon.alue && pokemon.alue !== nykyinenAlue) {
+            nykyinenAlue = pokemon.alue;
+            pokedex.innerHTML += `
+                <div class="alue-otsikko" id="alue-${nykyinenAlue}">
+                    ${nykyinenAlue}
+                </div>
+            `;
+        }
+
+        pokedex.innerHTML += `
+            <div class="kortti" onclick="avaaPokemon(${pokemonit.indexOf(pokemon)})">
+                <img src="${pokemon.kuva}" alt="${pokemon.nimi}">
+                <h2>${pokemon.nimi}</h2>
+                <p>${pokemon.numero}</p>
+                <span class="tyyppi">${pokemon.tyyppi}</span>
+            </div>
+        `;
+    });
+}
+
+// Alustukset sivun latautuessa
+naytaPokemonit(pokemonit);
+paivitaAluevalikko();
+
+// Hakutoiminto (nimi tai numero)
+document.getElementById("haku").addEventListener("input", e => {
+    const hakusana = e.target.value.toLowerCase();
+    
+    const tulokset = pokemonit.filter(pokemon =>
+        (pokemon.nimi && pokemon.nimi.toLowerCase().includes(hakusana)) || 
+        (pokemon.numero && pokemon.numero.toLowerCase().includes(hakusana))
+    );
+    
+    naytaPokemonit(tulokset);
+});
+
+//yli 4500 riviä
+</script>
+</body>
+</html>

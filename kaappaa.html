@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Olio-kaappaus</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #111;
+}
+
+#game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+    user-select: none;
+}
+
+#background {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(
+            to bottom,
+            #75bde8 0%,
+            #b9e5f5 48%,
+            #6e9b55 49%,
+            #477039 100%
+        );
+}
+
+.ground-detail {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 45%;
+    opacity: .25;
+    background:
+        radial-gradient(circle at 10% 30%, #263b20 0 3px, transparent 4px),
+        radial-gradient(circle at 30% 60%, #263b20 0 4px, transparent 5px),
+        radial-gradient(circle at 70% 40%, #263b20 0 3px, transparent 4px),
+        radial-gradient(circle at 90% 70%, #263b20 0 4px, transparent 5px);
+}
+
+/* HUD */
+
+#hud {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 320px;
+    padding: 12px 22px;
+    border-radius: 18px;
+    background: rgba(15, 20, 25, .82);
+    color: white;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,.3);
+    z-index: 10;
+}
+
+#hud .title {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+#status {
+    margin-top: 5px;
+    font-size: 15px;
+}
+
+/* OLIO */
+
+#olio {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%);
+    width: min(42vw, 430px);
+    max-height: 55vh;
+    object-fit: contain;
+    filter: drop-shadow(0 18px 12px rgba(0,0,0,.35));
+    z-index: 4;
+    transition:
+        left .25s ease,
+        top .25s ease,
+        transform .18s ease,
+        opacity .25s ease;
+    pointer-events: none;
+}
+
+#olio.shake {
+    animation: shake .25s linear;
+}
+
+@keyframes shake {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(-50%, -50%) rotate(-5deg);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) rotate(5deg);
+    }
+
+    75% {
+        transform: translate(-50%, -50%) rotate(-4deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+}
+
+/* TÄHTÄIN */
+
+#crosshair {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    width: 70px;
+    height: 70px;
+    transform: translate(-50%, -50%);
+    z-index: 8;
+    pointer-events: none;
+}
+
+#crosshair::before,
+#crosshair::after {
+    content: "";
+    position: absolute;
+    background: rgba(255,255,255,.85);
+    box-shadow: 0 0 4px #000;
+}
+
+#crosshair::before {
+    width: 2px;
+    height: 70px;
+    left: 34px;
+    top: 0;
+}
+
+#crosshair::after {
+    width: 70px;
+    height: 2px;
+    left: 0;
+    top: 34px;
+}
+
+/* PALLO */
+
+#ball {
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    left: 50%;
+    bottom: 38px;
+    transform: translateX(-50%);
+    z-index: 12;
+    cursor: grab;
+    touch-action: none;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #ff4747 0%,
+            #ff4747 46%,
+            #202020 47%,
+            #202020 55%,
+            #f5f5f5 56%,
+            #f5f5f5 100%
+        );
+
+    box-shadow:
+        inset -8px -10px 0 rgba(0,0,0,.2),
+        0 8px 20px rgba(0,0,0,.4);
+}
+
+#ball::after {
+    content: "";
+    position: absolute;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: white;
+    border: 5px solid #202020;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#ball.dragging {
+    cursor: grabbing;
+}
+
+/* OHJE */
+
+#instruction {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0,0,0,.55);
+    padding: 9px 17px;
+    border-radius: 12px;
+    z-index: 10;
+    font-size: 15px;
+    text-align: center;
+}
+
+/* VIESTI */
+
+#message {
+    position: absolute;
+    left: 50%;
+    top: 25%;
+    transform: translate(-50%, -50%) scale(.8);
+    opacity: 0;
+    z-index: 20;
+    color: white;
+    font-size: clamp(28px, 5vw, 60px);
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0 4px 12px black;
+    pointer-events: none;
+    transition: .25s;
+    white-space: nowrap;
+}
+
+#message.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* UUSI PELI - EI KATOA */
+
+#restart {
+    position: absolute;
+    left: 50%;
+    top: 68%;
+    transform: translate(-50%, -50%);
+
+    padding: 14px 28px;
+
+    border: 0;
+    border-radius: 14px;
+
+    background: white;
+    color: #222;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    z-index: 100;
+
+    display: none;
+
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+
+#restart:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+    <div id="background"></div>
+    <div class="ground-detail"></div>
+
+    <div id="hud">
+        <div class="title">OLIO-KAAPPAUS</div>
+        <div id="status">
+            Olio: Hyllyvä | Palloja: 5
+        </div>
+    </div>
+
+    <img
+        id="olio"
+        src="Hyllyva.png"
+        alt="Hyllyvä"
+    >
+
+    <div id="crosshair"></div>
+
+    <div id="message"></div>
+
+    <button id="restart">
+        🔄 Uusi peli
+    </button>
+
+    <div id="instruction">
+        Vedä palloa hiirellä Oliota kohti ja päästä irti!
+    </div>
+
+    <div id="ball"></div>
+	
+	  <a href="kaappaa1.html">
+    <button class="valikko" style="transition: all 0.4s ease; position:absolute; bottom:10px; right:10px; padding:10px 14px; font-size:16px; cursor:pointer;">⬅️ Takaisin</button>
+
+</div>
+
+<script>
+const game = document.getElementById("game");
+const ball = document.getElementById("ball");
+const olio = document.getElementById("olio");
+const statusText = document.getElementById("status");
+const message = document.getElementById("message");
+const restart = document.getElementById("restart");
+
+let balls = 5;
+let dragging = false;
+
+let startX = 0;
+let startY = 0;
+
+let currentX = 0;
+let currentY = 0;
+
+let gameOver = false;
+
+/* =========================
+   HUD
+========================= */
+
+function updateHUD() {
+
+    statusText.textContent =
+        `Olio: Hyllyvä | Palloja: ${balls}`;
+
+}
+
+/* =========================
+   Hiiren sijainti
+========================= */
+
+function getPointerPosition(e) {
+
+    const rect = game.getBoundingClientRect();
+
+    return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+    };
+
+}
+
+/* =========================
+   Pallon painaminen
+========================= */
+
+ball.addEventListener("pointerdown", function(e) {
+
+    if (gameOver || balls <= 0) {
+        return;
+    }
+
+    dragging = true;
+
+    ball.setPointerCapture(e.pointerId);
+
+    ball.classList.add("dragging");
+
+    const pos = getPointerPosition(e);
+
+    startX = pos.x;
+    startY = pos.y;
+
+    currentX = startX;
+    currentY = startY;
+
+    e.preventDefault();
+
+});
+
+/* =========================
+   Pallon vetäminen
+========================= */
+
+ball.addEventListener("pointermove", function(e) {
+
+    if (!dragging) {
+        return;
+    }
+
+    const pos = getPointerPosition(e);
+
+    currentX = pos.x;
+    currentY = pos.y;
+
+    let dx = currentX - startX;
+    let dy = currentY - startY;
+
+    const maxDistance = 180;
+
+    const distance =
+        Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > maxDistance) {
+
+        dx =
+            dx / distance * maxDistance;
+
+        dy =
+            dy / distance * maxDistance;
+
+    }
+
+    ball.style.left =
+        (startX + dx) + "px";
+
+    ball.style.top =
+        (startY + dy) + "px";
+
+    ball.style.bottom = "auto";
+
+});
+
+/* =========================
+   Heitto
+========================= */
+
+ball.addEventListener("pointerup", function(e) {
+
+    if (!dragging) {
+        return;
+    }
+
+    dragging = false;
+
+    ball.classList.remove("dragging");
+
+    const dx =
+        currentX - startX;
+
+    const dy =
+        currentY - startY;
+
+    const distance =
+        Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > 35) {
+
+        balls--;
+
+        updateHUD();
+
+        throwBall(dx, dy);
+
+    } else {
+
+        resetBall();
+
+    }
+
+    e.preventDefault();
+
+});
+
+/* =========================
+   Pallon heitto
+========================= */
+
+function throwBall(dx, dy) {
+
+    const startLeft =
+        parseFloat(ball.style.left);
+
+    const startTop =
+        parseFloat(ball.style.top);
+
+    /*
+       Mitä enemmän vedät palloa,
+       sitä kauemmas se lentää.
+    */
+
+    const targetX =
+        window.innerWidth / 2 + dx * 1.7;
+
+    const targetY =
+        window.innerHeight * .48 + dy * 1.7;
+
+    const duration = 550;
+
+    const startTime =
+        performance.now();
+
+    function animate(time) {
+
+        const progress =
+            Math.min(
+                (time - startTime) / duration,
+                1
+            );
+
+        const ease =
+            1 - Math.pow(1 - progress, 3);
+
+        const x =
+            startLeft +
+            (targetX - startLeft) * ease;
+
+        const y =
+            startTop +
+            (targetY - startTop) * ease;
+
+        const scale =
+            1 - progress * .72;
+
+        const rotate =
+            progress * 720;
+
+        ball.style.left = x + "px";
+
+        ball.style.top = y + "px";
+
+        ball.style.transform =
+            `translate(-50%, -50%)
+             scale(${scale})
+             rotate(${rotate}deg)`;
+
+        if (progress < 1) {
+
+            requestAnimationFrame(animate);
+
+        } else {
+
+            checkHit();
+
+        }
+
+    }
+
+    requestAnimationFrame(animate);
+
+}
+
+/* =========================
+   Osuman tarkistus
+========================= */
+
+function checkHit() {
+
+    /*
+       Haetaan Olion oikea sijainti.
+    */
+
+    const olioRect =
+        olio.getBoundingClientRect();
+
+    const olioX =
+        olioRect.left +
+        olioRect.width / 2;
+
+    const olioY =
+        olioRect.top +
+        olioRect.height / 2;
+
+    const ballX =
+        parseFloat(ball.style.left);
+
+    const ballY =
+        parseFloat(ball.style.top);
+
+    const dx =
+        ballX - olioX;
+
+    const dy =
+        ballY - olioY;
+
+    const distance =
+        Math.sqrt(dx * dx + dy * dy);
+
+    /*
+       Jos pallo osuu Olioon.
+    */
+
+    if (distance < 170) {
+
+        /*
+           55 % mahdollisuus karata.
+        */
+
+        if (Math.random() < 0.55) {
+
+            olioKarkaa();
+
+        } else {
+
+            captureOlio();
+
+        }
+
+    } else {
+
+        miss();
+
+    }
+
+}
+
+/* =========================
+   OLIO KARKAA
+========================= */
+
+function olioKarkaa() {
+
+    olio.classList.add("shake");
+
+    message.textContent =
+        "Hyllyvä karkasi!";
+
+    message.classList.add("show");
+
+    setTimeout(function() {
+
+        message.classList.remove("show");
+
+        olio.classList.remove("shake");
+
+        /*
+           Uusi satunnainen paikka.
+        */
+
+        const x =
+            30 + Math.random() * 40;
+
+        const y =
+            38 + Math.random() * 15;
+
+        olio.style.left =
+            x + "%";
+
+        olio.style.top =
+            y + "%";
+
+        /*
+           Pieni karkausanimaatio.
+        */
+
+        olio.style.transform =
+            "translate(-50%, -50%) scale(.65)";
+
+        setTimeout(function() {
+
+            olio.style.transform =
+                "translate(-50%, -50%) scale(1)";
+
+        }, 180);
+
+        resetBall();
+
+    }, 800);
+
+}
+
+/* =========================
+   ONNISTUNUT KAAPPAUS
+========================= */
+
+function captureOlio() {
+
+    gameOver = true;
+
+    olio.classList.add("shake");
+
+    setTimeout(function() {
+
+        olio.style.transform =
+            "translate(-50%, -50%) scale(.05)";
+
+        olio.style.opacity = "0";
+
+    }, 250);
+
+    setTimeout(function() {
+
+        message.textContent =
+            "Hyllyvä kaapattu!";
+
+        message.classList.add("show");
+
+        /*
+           TÄMÄ NAPPI NÄYTETÄÄN
+           VASTA PELIN PÄÄTTYESSÄ.
+        */
+
+        restart.style.display = "block";
+
+    }, 550);
+
+}
+
+/* =========================
+   OHIHEITTO
+========================= */
+
+function miss() {
+
+    message.textContent =
+        "💨 Ohi!";
+
+    message.classList.add("show");
+
+    setTimeout(function() {
+
+        message.classList.remove("show");
+
+        resetBall();
+
+        /*
+           Pallot loppuivat.
+        */
+
+        if (balls <= 0) {
+
+            gameOver = true;
+
+            message.textContent =
+                "😵 Pallot loppuivat!";
+
+            message.classList.add("show");
+
+            restart.style.display =
+                "block";
+
+        }
+
+    }, 700);
+
+}
+
+/* =========================
+   Pallo takaisin alas
+========================= */
+
+function resetBall() {
+
+    ball.style.left = "50%";
+
+    ball.style.top = "auto";
+
+    ball.style.bottom = "38px";
+
+    ball.style.transform =
+        "translateX(-50%)";
+
+}
+
+/* =========================
+   UUSI PELI
+========================= */
+
+restart.addEventListener("click", function() {
+
+    balls = 5;
+
+    gameOver = false;
+
+    /*
+       Palautetaan Olio keskelle.
+    */
+
+    olio.style.left = "50%";
+
+    olio.style.top = "48%";
+
+    olio.style.opacity = "1";
+
+    olio.style.transform =
+        "translate(-50%, -50%)";
+
+    olio.classList.remove("shake");
+
+    /*
+       Piilotetaan viesti.
+    */
+
+    message.classList.remove("show");
+
+    /*
+       Piilotetaan nappi vasta kun
+       uusi peli alkaa.
+    */
+
+    restart.style.display = "none";
+
+    resetBall();
+
+    updateHUD();
+
+});
+
+/* =========================
+   Oikea klikkaus pois
+========================= */
+
+game.addEventListener(
+    "contextmenu",
+    function(e) {
+        e.preventDefault();
+    }
+);
+
+/* =========================
+   Aloitus
+========================= */
+
+updateHUD();
+
+</script>
+
+</body>
+</html>

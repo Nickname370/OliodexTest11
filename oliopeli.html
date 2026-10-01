@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oliopeli</title>
+
+    <style>
+        /* Retro Game Boy -henkinen ulkoasu */
+        body {
+            background-color: #222;
+            color: #111;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #game-container {
+            width: 400px;
+            background-color: #c4cfa1;
+            border: 12px solid #555;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            margin-top: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Takaisin-linkki: ei alaviivausta */
+        h1 a,
+        h1 a:visited,
+        h1 a:hover,
+        h1 a:active {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* Poistaa alaviivauksen kaikista mahdollisista linkeistä */
+        a {
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            min-height: 300px;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        .btn {
+            background-color: #8b966c;
+            border: 2px solid #111;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            text-align: left;
+        }
+
+        .btn:hover {
+            background-color: #5c683d;
+            color: #fff;
+        }
+
+        .btn:disabled {
+            background-color: #aaa;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .battle-area {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border-bottom: 2px dashed #111;
+            padding-bottom: 15px;
+        }
+
+        .oliokortti {
+            width: 45%;
+            text-align: center;
+        }
+
+        .olio-img {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(0,0,0,0.05);
+            border: 2px dashed #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px auto;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .olio-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .hp-bar-bg {
+            width: 100%;
+            background-color: #8b966c;
+            border: 1px solid #111;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .hp-bar {
+            background-color: #111;
+            height: 10px;
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        #battle-log {
+            border: 2px solid #111;
+            padding: 8px;
+            background: rgba(255,255,255,0.2);
+            font-size: 12px;
+            height: 60px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+
+        .info-text {
+            font-size: 13px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .team-list {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+  <a href="oliodexpelit.html">
+    <button class="valikko" style="transition: all 0.4s ease; position:absolute; bottom:10px; right:505px; padding:10px 14px; font-size:16px; cursor:pointer;">⬅️ Takaisin Oliodexin pelisivulle</button>
+  </a>
+
+<div id="game-container">
+
+
+    <div id="start-screen" class="screen active">
+
+        <h1>Oliopeli</h1>
+
+        <p class="info-text">
+            Valitse aloitusoliosi.
+            Sipuliini ja Kuplanen on jo otettu...
+        </p>
+
+        <button class="btn" disabled>Sipuliini (Varattu)</button>
+        <button class="btn" disabled>Kuplanen (Varattu)</button>
+        <button class="btn" onclick="valitseKekruliekki()">Kekruliekki (Valitse)</button>
+    </div>
+
+    <!-- PÄÄVALIKKO / KARTTA -->
+    <div id="menu-screen" class="screen">
+        <h2>Oliopeli</h2>
+
+        <div class="info-text">
+            <strong>Oma Tiimi:</strong>
+            <div id="my-team-display" class="team-list"></div>
+        </div>
+
+        <button class="btn" style="text-align:center;" onclick="etsiVilliOlio()">
+            Etsi villiä Oliota pusikosta!
+        </button>
+    </div>
+
+    <!-- TAISTELURUUTU -->
+    <div id="battle-screen" class="screen">
+
+        <h3 id="battle-title">Taistelu!</h3>
+
+        <div class="battle-area">
+
+            <!-- Pelaajan olio -->
+            <div class="oliokortti">
+                <div id="player-name" style="font-weight:bold;">Olio</div>
+                <div id="player-image-container"></div>
+
+                <div style="font-size:11px;">
+                    HP: <span id="player-hp-txt">50/50</span>
+                </div>
+
+                <div class="hp-bar-bg">
+                    <div id="player-hp-bar" class="hp-bar"></div>
+                </div>
+            </div>
+
+            <!-- Villi olio -->
+            <div class="oliokortti">
+                <div id="enemy-name" style="font-weight:bold;">Villi</div>
+                <div id="enemy-image-container"></div>
+
+                <div style="font-size:11px;">
+                    HP: <span id="enemy-hp-txt">50/50</span>
+                </div>
+
+                <div class="hp-bar-bg">
+                    <div id="enemy-hp-bar" class="hp-bar"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="battle-log">Taistelu alkaa...</div>
+
+        <!-- Toiminnot -->
+        <div class="menu-grid" id="battle-actions">
+            <button class="btn" onclick="pelaajaHyokkaa()">Hyökkää</button>
+            <button class="btn" onclick="yritaNapata()">Kaappaa</button>
+            <button class="btn" onclick="pakene()" id="run-btn">Pakene</button>
+        </div>
+
+        <button
+            class="btn"
+            id="continue-btn"
+            style="display:none; text-align:center;"
+            onclick="palaaValikkoon()">
+            Jatka
+        </button>
+
+    </div>
+</div>
+
+<script>
+
+    // Pelin tietokanta villi-olioista
+    const villitOliot = [
+        { nimi: "Tuhnu", kuva: "Tuhnu.png", hp: 45, maxHp: 45, xp: 10 },
+        { nimi: "Torkkuli", kuva: "Torkkuli.png", hp: 60, maxHp: 60, xp: 12 },
+        { nimi: "Tärisijä", kuva: "Tarisija.png", hp: 40, maxHp: 40, xp: 10 },
+        { nimi: "Rautio", kuva: "Rautio.png", hp: 55, maxHp: 55, xp: 15 },
+        { nimi: "Havu", kuva: "Havu.png", hp: 42, maxHp: 42, xp: 9 },
+        { nimi: "Roihu", kuva: "Roihu.png", hp: 48, maxHp: 48, xp: 11 },
+        { nimi: "Murikka", kuva: "Murikka.png", hp: 50, maxHp: 50, xp: 12 },
+        { nimi: "Kiviporo", kuva: "Kiviporo.png", hp: 58, maxHp: 58, xp: 14 },
+		{ nimi: "Mega-Torkkuli", kuva: "Megatorkkuli.png", hp: 100, maxHp: 100, xp: 30 }
+    ];
+
+    let tiimi = [];
+    let aktiivinenOlio = null;
+    let nykyinenVastustaja = null;
+    let taisteluKaynnissa = false;
+
+    function naytaRuutu(screenId) {
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+        });
+
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function paivitaTiimiNakyma() {
+        const lista = document.getElementById("my-team-display");
+        lista.innerHTML = "";
+
+        tiimi.forEach(o => {
+            lista.innerHTML += `
+                • <strong>${o.nimi}</strong>
+                (HP: ${o.hp}/${o.maxHp})
+                ${o.nimi === "Kekruliekki"
+                    ? '[XP: ' + o.xp + '/30]'
+                    : ''}
+                <br>
+            `;
+        });
+    }
+
+    function valitseKekruliekki() {
+
+        let kekruliekki = {
+            nimi: "Kekruliekki",
+            kuva: "Kekruliekki.png",
+            hp: 50,
+            maxHp: 50,
+            xp: 0,
+            kehitettava: true
+        };
+
+        tiimi.push(kekruliekki);
+        aktiivinenOlio = tiimi[0];
+
+        paivitaTiimiNakyma();
+        naytaRuutu("menu-screen");
+    }
+
+    function etsiVilliOlio() {
+
+        let pohja =
+            villitOliot[Math.floor(Math.random() * villitOliot.length)];
+
+        nykyinenVastustaja =
+            JSON.parse(JSON.stringify(pohja));
+
+        if (aktiivinenOlio.hp <= 0) {
+            aktiivinenOlio.hp = aktiivinenOlio.maxHp;
+        }
+
+        document.getElementById("battle-title").innerText =
+            "Villi Olio ilmestyi!";
+
+        document.getElementById("player-name").innerText =
+            aktiivinenOlio.nimi;
+
+        document.getElementById("player-image-container").innerHTML = `
+            <div class="olio-img">
+                <img
+                    src="${aktiivinenOlio.kuva}"
+                    alt="${aktiivinenOlio.nimi}"
+                    onerror="this.parentElement.innerHTML='[${aktiivinenOlio.nimi}]'"
+                />
+            </div>
+        `;
+
+        document.getElementById("enemy-name").innerText =
+            nykyinenVastustaja.nimi;
+
+        document.getElementById("enemy-image-container").innerHTML = `
+            <div class="olio-img">
+                <img
+                    src="${nykyinenVastustaja.kuva}"
+                    alt="${nykyinenVastustaja.nimi}"
+                    onerror="this.parentElement.innerHTML='[${nykyinenVastustaja.nimi}]'"
+                />
+            </div>
+        `;
+
+        document.getElementById("battle-actions").style.display = "grid";
+        document.getElementById("continue-btn").style.display = "none";
+
+        paivitaHpBaarit();
+
+        document.getElementById("battle-log").innerText =
+            `Villi ${nykyinenVastustaja.nimi} haastaa sinut!`;
+
+        taisteluKaynnissa = true;
+
+        naytaRuutu("battle-screen");
+    }
+
+    function paivitaHpBaarit() {
+
+        document.getElementById("player-hp-txt").innerText =
+            `${aktiivinenOlio.hp}/${aktiivinenOlio.maxHp}`;
+
+        let pPras =
+            (aktiivinenOlio.hp / aktiivinenOlio.maxHp) * 100;
+
+        document.getElementById("player-hp-bar").style.width =
+            `${pPras < 0 ? 0 : pPras}%`;
+
+        document.getElementById("enemy-hp-txt").innerText =
+            `${nykyinenVastustaja.hp}/${nykyinenVastustaja.maxHp}`;
+
+        let ePras =
+            (nykyinenVastustaja.hp / nykyinenVastustaja.maxHp) * 100;
+
+        document.getElementById("enemy-hp-bar").style.width =
+            `${ePras < 0 ? 0 : ePras}%`;
+    }
+
+    function loggaa(teksti) {
+        document.getElementById("battle-log").innerText = teksti;
+    }
+
+    function pelaajaHyokkaa() {
+
+        if (!taisteluKaynnissa) return;
+
+        let isku = Math.floor(Math.random() * 11) + 10;
+
+        nykyinenVastustaja.hp -= isku;
+
+        if (nykyinenVastustaja.hp < 0)
+            nykyinenVastustaja.hp = 0;
+
+        paivitaHpBaarit();
+
+        loggaa(
+            `${aktiivinenOlio.nimi} hyökkäsi! Se teki ${isku} vahinkoa.`
+        );
+
+        if (nykyinenVastustaja.hp <= 0) {
+
+            lopetaTaistelu(
+                true,
+                `${nykyinenVastustaja.nimi} pyörtyi! Voitit taistelun.`
+            );
+
+            return;
+        }
+
+        document.getElementById("battle-actions").style.pointerEvents =
+            "none";
+
+        setTimeout(() => {
+
+            if (nykyinenVastustaja.hp > 0) {
+
+                let vIsku =
+                    Math.floor(Math.random() * 9) + 8;
+
+                aktiivinenOlio.hp -= vIsku;
+
+                if (aktiivinenOlio.hp < 0)
+                    aktiivinenOlio.hp = 0;
+
+                paivitaHpBaarit();
+
+                loggaa(
+                    `Villi ${nykyinenVastustaja.nimi} iski takaisin ja teki ${vIsku} vahinkoa.`
+                );
+
+                if (aktiivinenOlio.hp <= 0) {
+
+                    lopetaTaistelu(
+                        false,
+                        `${aktiivinenOlio.nimi} pyörtyi! Hävisit taistelun.`
+                    );
+                }
+            }
+
+            document.getElementById("battle-actions").style.pointerEvents =
+                "auto";
+
+        }, 1000);
+    }
+
+    function yritaNapata() {
+
+        if (!taisteluKaynnissa) return;
+
+        loggaa(`Heitit Kaappauspallon...`);
+
+        document.getElementById("battle-actions").style.pointerEvents =
+            "none";
+
+        setTimeout(() => {
+
+            let hpProsentti =
+                nykyinenVastustaja.hp /
+                nykyinenVastustaja.maxHp;
+
+            let karkaamisMahdollisuus =
+                0.30 + (hpProsentti * 0.25);
+
+            let arpa = Math.random();
+
+            if (arpa > karkaamisMahdollisuus) {
+
+                loggaa(
+                    `Onnistuit! ${nykyinenVastustaja.nimi} napattiin tiimiisi!`
+                );
+
+                nykyinenVastustaja.hp =
+                    nykyinenVastustaja.maxHp;
+
+                tiimi.push(nykyinenVastustaja);
+
+                lopetaTaistelu(
+                    true,
+                    `Sait uuden Olion: ${nykyinenVastustaja.nimi}!`
+                );
+
+            } else {
+
+                loggaa(
+                    `Voi ei! ${nykyinenVastustaja.nimi} karkasi Kaappauspallosta!`
+                );
+
+                setTimeout(() => {
+
+                    let vIsku =
+                        Math.floor(Math.random() * 9) + 8;
+
+                    aktiivinenOlio.hp -= vIsku;
+
+                    if (aktiivinenOlio.hp < 0)
+                        aktiivinenOlio.hp = 0;
+
+                    paivitaHpBaarit();
+
+                    loggaa(
+                        `Villi ${nykyinenVastustaja.nimi} käytti tilaisuuden hyväkseen ja teki ${vIsku} vahinkoa.`
+                    );
+
+                    if (aktiivinenOlio.hp <= 0) {
+
+                        lopetaTaistelu(
+                            false,
+                            `${aktiivinenOlio.nimi} pyörtyi!`
+                        );
+                    }
+
+                    document.getElementById("battle-actions").style.pointerEvents =
+                        "auto";
+
+                }, 1000);
+            }
+
+        }, 1000);
+    }
+
+    function pakene() {
+
+        loggaa("Pakenit paikalta turvallisesti!");
+
+        taisteluKaynnissa = false;
+
+        document.getElementById("battle-actions").style.display =
+            "none";
+
+        document.getElementById("continue-btn").style.display =
+            "block";
+    }
+
+    function lopetaTaistelu(pelaajaVoitti, viesti) {
+
+        taisteluKaynnissa = false;
+
+        loggaa(viesti);
+
+        document.getElementById("battle-actions").style.display =
+            "none";
+
+        document.getElementById("continue-btn").style.display =
+            "block";
+
+        document.getElementById("battle-actions").style.pointerEvents =
+            "auto";
+
+        if (
+            pelaajaVoitti &&
+            aktiivinenOlio.kehitettava &&
+            nykyinenVastustaja.hp <= 0
+        ) {
+
+            aktiivinenOlio.xp += nykyinenVastustaja.xp;
+
+            loggaa(
+                `${viesti} ${aktiivinenOlio.nimi} sai ${nykyinenVastustaja.xp} XP!`
+            );
+
+            if (
+                aktiivinenOlio.xp >= 30 &&
+                aktiivinenOlio.nimi === "Kekruliekki"
+            ) {
+
+                setTimeout(() => {
+
+                    aktiivinenOlio.nimi = "Roviosielu";
+                    aktiivinenOlio.kuva = "Roviosielu.png";
+                    aktiivinenOlio.maxHp = 80;
+                    aktiivinenOlio.hp = 80;
+
+                    alert("Mitä?! Kekruliekki kehittyy...");
+                    alert("Kekruliekki kehittyi Roviosieluksi!");
+
+                    document.getElementById("player-name").innerText =
+                        aktiivinenOlio.nimi;
+
+                    paivitaHpBaarit();
+                    paivitaTiimiNakyma();
+
+                }, 1500);
+            }
+        }
+    }
+
+    function palaaValikkoon() {
+
+        paivitaTiimiNakyma();
+
+        naytaRuutu("menu-screen");
+    }
+
+</script>
+
+</body>
+</html>

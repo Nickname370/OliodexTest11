@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oliotappelu</title>
+    <style>
+        /* Retro Game Boy -henkinen tyylittely */
+        body {
+            background-color: #333;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #111;
+            user-select: none;
+        }
+
+        #game-container {
+            width: 400px;
+            height: 380px;
+            background-color: #c4cfa1; /* Klassinen Game Boyn vihertävä ruutu */
+            border: 10px solid #555;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Taistelutanner */
+        #battle-screen {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+            position: relative;
+        }
+
+        /* Statuspalkit */
+        .status-box {
+            background: rgba(255,255,255,0.3);
+            border: 2px solid #111;
+            padding: 5px 10px;
+            width: 160px;
+            font-size: 14px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        .hp-bar-container {
+            width: 100%;
+            background: #777;
+            height: 8px;
+            border: 1px solid #111;
+            margin-top: 4px;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background: #111;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        /* Asettelu statuspalkeille ja kuville */
+        .vihu-status { align-self: flex-start; margin-left: 10px; }
+        .pelaaja-status { align-self: flex-end; margin-right: 10px; }
+
+        #sprites-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* Oliokuvien asemointi ruudulle */
+        .sprite-wrapper {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #vihu-wrapper {
+            top: 55px;
+            right: 40px;
+            animation: bounceVihu 2.5s infinite alternate ease-in-out;
+        }
+
+        #pelaaja-wrapper {
+            bottom: 50px;
+            left: 30px;
+            animation: bouncePelaaja 2s infinite alternate ease-in-out;
+        }
+
+        /* Säilytetään pikselireunat tarkkoina, jos kuvat ovat pixel artia */
+        .pixel-sprite {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        @keyframes bouncePelaaja {
+            from { transform: translateY(0) scaleY(1); }
+            to { transform: translateY(-3px) scaleY(0.98); }
+        }
+
+        @keyframes bounceVihu {
+            from { transform: translateY(0); }
+            to { transform: translateY(-4px); }
+        }
+
+        /* Alapalkki (Teksti ja valikko) */
+        #ui-box {
+            height: 110px;
+            background-color: #c4cfa1;
+            border-top: 4px double #111;
+            display: flex;
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        #text-box {
+            flex: 1;
+            font-size: 15px;
+            line-height: 1.4;
+            padding-right: 10px;
+            word-wrap: break-word;
+        }
+
+        .menu-box {
+            width: 130px;
+            border-left: 2px solid #111;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+            padding-left: 8px;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid #111;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: left;
+            padding: 4px 6px;
+        }
+
+        .btn:hover {
+            background: #111;
+            color: #c4cfa1;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Taisteluruutu -->
+    <div id="battle-screen">
+	
+        <!-- Vihollisen status (Sipuliini) -->
+        <div class="status-box vihu-status">
+            <div>SIPULIINI</div>
+            <div>Lv 5</div>
+			
+            <div class="hp-bar-container">
+                <div id="vihu-hp" class="hp-bar"></div>
+            </div>
+        </div>
+
+        <!-- Oliokuvat -->
+        <div id="sprites-container">
+		
+            <!-- Pelaajan Kuplanen -->
+            <div id="pelaaja-wrapper" class="sprite-wrapper">
+                <img class="pixel-sprite" src="Kuplanen.png" alt="Kuplanen">
+            </div>
+            
+            <!-- Vihollisen Sipuliini -->
+            <div id="vihu-wrapper" class="sprite-wrapper">
+                <img class="pixel-sprite" src="Sipuliini.png" alt="Sipuliini">
+            </div>
+        </div>
+		
+	<a href="oliodextappelu1.html">
+    <button style="position:absolute; top:0px; right:0px; padding:10px 14px; font-size:16px; cursor:pointer;">Takaisin</button>
+  </a>
+
+        <!-- Pelaajan status (Kuplanen) -->
+        <div class="status-box pelaaja-status">
+            <div>KUPLANEN</div>
+            <div>Lv 5</div>
+            <div class="hp-bar-container">
+                <div id="pelaaja-hp" class="hp-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alavalikko ja tekstilaatikko -->
+    <div id="ui-box">
+        <div id="text-box">Villi SIPULIINI hyökkää! Mitä KUPLANEN tekee?</div>
+        
+        <!-- Päävalikko -->
+        <div id="menu-box" class="menu-box">
+            <button class="btn" onclick="naytaHyokkaykset()">TAISTELE</button>
+            <button class="btn" onclick="pakene()">PAKENE</button>
+        </div>
+
+        <!-- Hyökkäysvalikko -->
+        <div id="moves-box" class="menu-box hidden">
+            <button class="btn" onclick="hyokkaa('Vesitykki', 15)">VESITYKKI</button>
+            <button class="btn" onclick="hyokkaa('Kuplapuhallus', 30)">KUPLAPUHALLUS</button>
+            <button class="btn" onclick="palaaValikkoon()">TAKASIN</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Elämäpisteiden alustus
+    let pelaajaMaxHp = 55;
+    let pelaajaHp = 55;
+    let vihuMaxHp = 50;
+    let vihuHp = 50;
+    let taisteluKaynnissa = true;
+
+    // Haetaan HTML-elementit
+    const textBox = document.getElementById('text-box');
+    const menuBox = document.getElementById('menu-box');
+    const movesBox = document.getElementById('moves-box');
+
+    // Päivitetään HP-palkit ruudulle
+    function paivitaHpPalkit() {
+        const pelaajaProsentti = Math.max(0, (pelaajaHp / pelaajaMaxHp) * 100);
+        const vihuProsentti = Math.max(0, (vihuHp / vihuMaxHp) * 100);
+        
+        if(document.getElementById('pelaaja-hp')) document.getElementById('pelaaja-hp').style.width = pelaajaProsentti + '%';
+        if(document.getElementById('vihu-hp')) document.getElementById('vihu-hp').style.width = vihuProsentti + '%';
+    }
+
+    // Näytetään hyökkäysvalikko
+    function naytaHyokkaykset() {
+        if (!taisteluKaynnissa) return;
+        menuBox.classList.add('hidden');
+        movesBox.classList.remove('hidden');
+    }
+
+    // Palataan takaisin päävalikkoon
+    function palaaValikkoon() {
+        movesBox.classList.add('hidden');
+        menuBox.classList.remove('hidden');
+    }
+
+    // Pelaajan hyökkäysfunktio
+    function hyokkaa(liikeNimi, vahinko) {
+        if (!taisteluKaynnissa) return;
+        movesBox.classList.add('hidden');
+
+        textBox.innerHTML = `KUPLANEN käytti<br>${liikeNimi.toUpperCase()}!`;
+        
+        setTimeout(() => {
+            // Väläytetään vastustajaa osuman merkiksi
+            const vihuWrapper = document.getElementById('vihu-wrapper');
+            if (vihuWrapper) {
+                vihuWrapper.style.opacity = '0.1';
+                setTimeout(() => vihuWrapper.style.opacity = '1', 150);
+            }
+
+            // Tyyppivastustus: Vesityyppi on heikko ruohotyyppiä vastaan
+            let lopullinenVahinko = Math.floor(vahinko * 0.7); 
+            vihuHp -= lopullinenVahinko;
+            if (vihuHp < 0) vihuHp = 0;
+            paivitaHpPalkit();
+
+            textBox.innerHTML = `KUPLANEN käytti<br>${liikeNimi.toUpperCase()}!<br><span style="font-size:12px;">Se ei ole kovin tehokas...</span>`;
+
+            setTimeout(() => {
+                if (vihuHp <= 0) {
+                    if (vihuWrapper) vihuWrapper.style.display = 'none';
+                    lopetaPeli("Villi SIPULIINI pyörtyi!<br>KUPLANEN voitti!");
+                } else {
+                    vihollisenVuoro();
+                }
+            }, 1500);
+        }, 1000);
+    }
+
+    // Tekoälyn/Botin vuoro
+    function vihollisenVuoro() {
+        if (!taisteluKaynnissa) return;
+
+        textBox.innerHTML = "Villi SIPULIINI<br>käytti LEHTISADETTA!";
+
+        setTimeout(() => {
+            // Väläytetään pelaajaa osuman merkiksi
+            const pelaajaWrapper = document.getElementById('pelaaja-wrapper');
+            if (pelaajaWrapper) {
+                pelaajaWrapper.style.opacity = '0.1';
+                setTimeout(() => pelaajaWrapper.style.opacity = '1', 150);
+            }
+
+            // Ruoholiike tekee kovaa tuhoa vesityypin Kuplaseen
+            let vihuVahinko = 20; 
+            pelaajaHp -= vihuVahinko;
+            if (pelaajaHp < 0) pelaajaHp = 0;
+            paivitaHpPalkit();
+
+            textBox.innerHTML = "Villi SIPULIINI<br>käytti LEHTISADETTA!<br>Se on erittäin tehokas!</span>";
+
+            setTimeout(() => {
+                if (pelaajaHp <= 0) {
+                    if (pelaajaWrapper) pelaajaWrapper.style.display = 'none';
+                    lopetaPeli("KUPLANEN pyörtyi...<br>Hävisit ottelun!");
+                } else {
+                    textBox.innerHTML = "Mitä KUPLANEN tekee?";
+                    menuBox.classList.remove('hidden');
+                }
+            }, 1500);
+        }, 1000);
+    }
+
+
+    function pakene() {
+        textBox.innerHTML = "Pakenit paikalta turvallisesti!";
+        taisteluKaynnissa = false;
+        menuBox.classList.add('hidden');
+        movesBox.classList.add('hidden');
+        
+        setTimeout(() => {
+            window.location.href = 'oliodextappelu1.html';
+        }, 1200);
+    }
+
+    // Pelin lopetustoiminnot häviössä tai voitossa
+    function lopetaPeli(viesti) {
+        taisteluKaynnissa = false;
+        textBox.innerHTML = viesti;
+        menuBox.classList.add('hidden');
+        movesBox.classList.add('hidden');
+    }
+
+    // Ajetaan HP-palkkien alustus heti kun peli latautuu
+    paivitaHpPalkit();
+</script>
+</body>
+</html>
